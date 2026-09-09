@@ -1,0 +1,18 @@
+# Conservative initial values inherited from the current workspace.
+# Revalidate every value at low speed on the target PI05 hardware.
+arm_alpha: 0.35
+arm_deadband_rad: 0.002
+max_arm_step_rad: 0.012
+
+gripper_alpha: 0.25
+gripper_deadband_m: 0.0015
+max_gripper_step_m: 0.0006
+
+speed_percent: 30.0
+command_timeout_s: 0.35
+
+double_gripper_return: true
+gesture_open_m: 0.075
+gesture_closed_m: 0.030
+gesture_timeout_s: 2.0
+return_duration_s: 4.0
