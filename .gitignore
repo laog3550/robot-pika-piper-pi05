@@ -1,0 +1,25 @@
+# catkin
+/build/
+/devel/
+/install/
+/logs/
+.catkin_workspace
+
+# Machine-local configuration
+/config/pi05.env
+*.local.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Runtime artifacts
+*.bag
+*.bag.active
+*.log
