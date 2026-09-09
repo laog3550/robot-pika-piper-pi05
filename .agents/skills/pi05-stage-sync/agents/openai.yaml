@@ -1,0 +1,7 @@
+interface:
+  display_name: "PI05 阶段成果同步"
+  short_description: "验收、整理并提交 PI05 阶段成果到 GitHub PR"
+  default_prompt: "使用 $pi05-stage-sync 完成、验收并发布当前 PI05 阶段任务。"
+
+policy:
+  allow_implicit_invocation: true
