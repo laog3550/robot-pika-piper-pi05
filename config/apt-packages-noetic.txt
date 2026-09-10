@@ -1,0 +1,40 @@
+# Ubuntu 20.04 + ROS Noetic build and runtime baseline.
+# One apt package per line; bootstrap_ubuntu.sh ignores blank lines and comments.
+build-essential
+ca-certificates
+can-utils
+cmake
+curl
+ethtool
+git
+gnupg
+iproute2
+libboost-all-dev
+libeigen3-dev
+libjsoncpp-dev
+liburdfdom-dev
+lsb-release
+pkg-config
+python3
+python3-dev
+python3-pip
+python3-rosdep
+python3-testresources
+python3-vcstool
+python3-venv
+ros-noetic-catkin
+ros-noetic-eigenpy
+ros-noetic-joint-state-publisher-gui
+ros-noetic-robot-state-publisher
+ros-noetic-ros-base
+ros-noetic-rviz
+ros-noetic-xacro
+# ABI-compatible robotpkg closure for PikaAnyArm's pinocchio.casadi import.
+robotpkg-qpoases=3.2.1r1
+robotpkg-casadi=3.6.7
+robotpkg-py38-casadi=3.6.7
+robotpkg-hpp-fcl=2.4.5
+robotpkg-py38-hpp-fcl=2.4.5
+robotpkg-py38-eigenpy=3.10.0
+robotpkg-pinocchio=3.2.0
+robotpkg-py38-pinocchio=3.2.0

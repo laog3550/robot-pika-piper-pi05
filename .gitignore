@@ -10,6 +10,8 @@
 *.local.yaml
 
 # Python
+/.venv/
+/.venv.isolated-backup-*/
 __pycache__/
 *.py[cod]
 .pytest_cache/

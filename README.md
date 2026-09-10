@@ -47,7 +47,11 @@ robot-pika-piper-pi05/
 │   ├── status.md                    # 阶段状态与验证等级
 │   └── stages/                      # 每阶段的证据、风险与回滚记录
 ├── scripts/
-│   └── README.md                    # 安装、检查、启动和停机脚本约定
+│   ├── bootstrap_ubuntu.sh          # apt 与 ROS Noetic 基线（默认 dry-run）
+│   ├── setup_rosdep.sh              # rosdep 初始化、预览与安装
+│   ├── install_python_deps.sh       # Python 3.8 虚拟环境
+│   ├── build_catkin.sh              # 增量 catkin 构建
+│   └── check_environment.sh         # 只读环境检查
 ├── src/
 │   ├── pi05_bringup/
 │   │   ├── CMakeLists.txt
@@ -126,21 +130,29 @@ pi05_control 安全过滤
 8. **遥操作联调**：确认坐标系、方向、夹爪范围、回零逻辑和工作空间。
 9. **验收与固化**：保存版本、参数、日志、测试结果，并配置受控的开机启动。
 
-## 快速开始（骨架阶段）
+## 快速开始（S04 环境阶段）
 
 ```bash
 git clone https://github.com/laog3550/robot-pika-piper-pi05.git
 cd robot-pika-piper-pi05
 
-cp config/pi05.env.example config/pi05.env
-# 按实际硬件修改 config/pi05.env；该文件不会提交到 Git。
+# 所有安装入口默认只显示计划，不调用 sudo：
+scripts/bootstrap_ubuntu.sh
+scripts/setup_rosdep.sh
+scripts/install_python_deps.sh
 
-rosdep install --from-paths src --ignore-src -r -y
-catkin_make
-source devel/setup.bash
+# 审阅输出后逐步执行；交互模式会再次要求输入 APPLY：
+scripts/bootstrap_ubuntu.sh --apply
+vcs validate < third_party/pi05-upstream.repos
+vcs import ../pi05-upstream-src < third_party/pi05-upstream.repos
+scripts/install_python_deps.sh --apply
+scripts/setup_rosdep.sh --apply
+scripts/build_catkin.sh
+scripts/check_environment.sh
 ```
 
-当前 launch 和控制脚本仍是待迁移入口，**不要在此阶段直接用于机械臂上电运动**。
+完整步骤和恢复方式见 [`docs/environment-setup.md`](docs/environment-setup.md)。当前 launch
+和控制脚本仍是待迁移入口，**不要在此阶段直接用于机械臂上电运动**。
 
 ## 真机部署安全原则
 
@@ -164,8 +176,9 @@ source devel/setup.bash
 - [ ] 按 S02 现场采集命令确认 PI05 架构、Ubuntu/ROS、实物与安全链路
 - [ ] 确认右单臂的 Piper CAN 接口稳定名称
 - [x] 形成 S03 上游依赖与许可证基线（`pika_locator` 与 Piper ROS 溯源仍为阻塞项）
+- [x] 建立 S04 Ubuntu 20.04 + ROS Noetic 安装、rosdep、Python、构建与检查流程
 - [ ] 迁移右臂 launch、指令过滤器和关节状态桥接
-- [ ] 增加环境检查、CAN 检查、启动与安全停机脚本
+- [ ] 增加 CAN 检查、启动与安全停机脚本
 - [ ] 建立仿真/回放测试与真机验收表
 - [ ] 在 PI05 上完成低速真机验证并记录结果
 
