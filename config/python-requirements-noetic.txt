@@ -1,8 +1,31 @@
 # Direct Python runtime baseline for CPython 3.8 on Ubuntu 20.04.
-# Transitive dependencies are resolved by pip and verified with `pip check`.
-# piper_sdk is deliberately installed from the S03 VCS checkout, not PyPI.
-casadi==3.6.5
+# ABI-coupled Pinocchio/CasADi bindings come from pinned robotpkg apt packages;
+# PyPI `pin` wheels do not contain the required pinocchio.casadi binding.
+# piper_sdk is installed from the S03 VCS checkout, not PyPI.
 meshcat==0.3.2
 numpy==1.24.4
-pin==2.7.0
 python-can==4.3.1
+
+# Fully pinned transitive closure for the three index packages above.
+asttokens==3.0.2
+backcall==0.2.0
+executing==2.2.1
+ipython==8.12.3
+jedi==0.19.2
+matplotlib-inline==0.1.7
+msgpack==1.0.8
+packaging==26.2
+parso==0.8.7
+pickleshare==0.7.5
+prompt-toolkit==3.0.52
+pure-eval==0.2.3
+Pygments==2.19.2
+pyngrok==7.2.12
+pyzmq==27.1.0
+stack-data==0.6.3
+tornado==6.4.2
+traitlets==5.14.3
+typing-extensions==4.13.2
+u-msgpack-python==2.8.0
+wcwidth==0.8.3
+wrapt==1.17.3

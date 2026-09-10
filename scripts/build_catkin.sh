@@ -68,6 +68,10 @@ venv_version=$("$venv_path/bin/python" -c 'import sys; print(f"{sys.version_info
 source /opt/ros/noetic/setup.bash
 # shellcheck disable=SC1091
 source "$venv_path/bin/activate"
+export CMAKE_PREFIX_PATH="/opt/openrobots${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+export LD_LIBRARY_PATH="/opt/openrobots/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PKG_CONFIG_PATH="/opt/openrobots/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export PYTHONPATH="/opt/openrobots/lib/python3.8/site-packages${PYTHONPATH:+:$PYTHONPATH}"
 pi05_require_command catkin_make
 
 if [[ "$check_rosdep" == true ]]; then

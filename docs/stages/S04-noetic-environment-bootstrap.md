@@ -11,7 +11,11 @@ rosdep、Python 依赖和 catkin 构建流程。所有入口必须提供帮助�
 - 增加声明式 apt 清单与 Python 3.8 直接依赖固定清单。
 - 增加 apt/ROS 引导脚本，固定 ROS key commit、SHA-256 和指纹。
 - 增加 rosdep 初始化、更新、模拟和安装脚本。
-- 增加隔离 `.venv` 的 Python 安装脚本，并校验 S03 `piper_sdk` SHA。
+- 增加 Python 3.8 venv 安装脚本，并校验 S03 `piper_sdk` SHA；venv 通过
+  `--system-site-packages` 与 ROS Noetic 的 Python 包兼容。
+- 修复 Pinocchio/CasADi：不再使用缺少 `pinocchio.casadi` 的 PyPI `pin` wheel，也不
+  混编 ABI 不兼容的 C++ 库；改用签名 robotpkg 源中的 Python 3.8 Pinocchio 3.2.0 与
+  CasADi 3.6.7 固定包，并显式锁定 qpoases、hpp-fcl、eigenpy 传递依赖的兼容版本。
 - 增加 catkin 增量构建脚本与统一只读环境检查。
 - 增加脚本契约测试，验证帮助、错误码、dry-run 和“默认不调用 sudo”。
 - 增加操作者文档并更新 README 快速开始与目录索引。
@@ -20,9 +24,9 @@ rosdep、Python 依赖和 catkin 构建流程。所有入口必须提供帮助�
 
 支持 Ubuntu 20.04 x86_64、ROS Noetic 和 `/usr/bin/python3` 3.8。脚本的稳定公共入口为：
 
-- `scripts/bootstrap_ubuntu.sh [--apply] [--yes] [--skip-ros-repo]`
+- `scripts/bootstrap_ubuntu.sh [--apply] [--yes] [--skip-ros-repo] [--skip-robotpkg-repo]`
 - `scripts/setup_rosdep.sh [--workspace PATH] [--apply] [--yes] [--skip-init]`
-- `scripts/install_python_deps.sh [--venv PATH] [--source-root PATH] [--apply] [--yes]`
+- `scripts/install_python_deps.sh [--venv PATH] [--source-root PATH] [--index-url URL] [--apply] [--yes]`
 - `scripts/build_catkin.sh [--workspace PATH] [--venv PATH] [--jobs N] [--install]`
 - `scripts/check_environment.sh [--workspace PATH] [--venv PATH]`
 
@@ -36,14 +40,20 @@ rosdep、Python 依赖和 catkin 构建流程。所有入口必须提供帮助�
 - `bash tests/test_environment_scripts.sh`：通过；五个入口的帮助、非法参数失败、三类
   安装 dry-run 和默认不调用 sudo 均通过。
 - `bash -n scripts/*.sh scripts/lib/common.sh tests/test_environment_scripts.sh`：通过。
-- 临时 catkin 工作区构建命令：通过；使用 `/usr/bin/python3` 构建当前两个骨架包，
-  产物只写入 `/tmp`。
+- 临时 catkin 工作区构建命令：通过；使用全新 venv 的 Python 3.8.10，确认
+  `CMAKE_PREFIX_PATH=/opt/openrobots;/opt/ros/noetic`，产物只写入 `/tmp`。
 - `/usr/bin/python3 --version`：3.8.10，符合 Noetic 基线。
-- 临时 `/usr/bin/python3 -m venv`：失败，确认本机缺少 `python3-venv`；已纳入 apt 清单。
-- Python wheel 联网安装：未通过；当前网络链路对新 pip 返回 TLS EOF，未修改系统。
+- 全新 `/usr/bin/python3 -m venv --system-site-packages`：通过。
+- `apt-get --simulate install --no-install-recommends <完整清单>`：通过；新增 18 个、升级
+  0 个、卸载 0 个，固定的 8 个 robotpkg 包均可求解。
+- `scripts/install_python_deps.sh --venv /tmp/<fresh>/venv ... --apply --yes`：通过；在全新
+  Python 3.8.10 venv 中安装成功，再次执行也通过。
+- 清除继承的 `PYTHONPATH`/`LD_LIBRARY_PATH` 后直接使用新 venv 导入 `rospy`、CasADi、
+  Pinocchio 和 `pinocchio.casadi`：通过，并成功构造 `cpin.Model(pinocchio.Model())`。
+- `scripts/check_environment.sh --workspace <repo> --venv /tmp/<fresh>/venv`：通过，摘要为
+  `all required environment checks passed`。
 
-因此验证等级为“构建”：仓库 catkin 骨架与脚本契约已验证，但完整 apt/Python 安装
-仍需在配置好网络和 `python3-venv` 后复验。
+因此修复达到“构建”验证等级。没有执行 CAN、串口、ROS 节点启动或机械臂运动验收。
 
 ## 真机证据
 
@@ -51,11 +61,11 @@ rosdep、Python 依赖和 catkin 构建流程。所有入口必须提供帮助�
 
 ## 风险与限制
 
-- Python 文件固定直接依赖版本；pip 的间接依赖解析仍依赖当时可用的兼容 wheel，安装
-  后以 `pip check` 和导入测试作为强制门禁。
+- Python 索引依赖已固定完整传递闭包；安装后仍以 `pip check` 和功能导入测试作为
+  强制门禁。robotpkg 安装需要其签名仓库可达。
 - `pika_locator` 仍缺少可验证源码和许可证证据，不进入安装流程。
 - Piper ROS 内嵌副本的许可证溯源仍未闭环；本阶段没有复制该源码。
-- 本机尚未完成 apt、rosdep 和 Python 环境安装，不能把 S04 视为真机部署完成。
+- S04 环境通过不代表真机部署完成；硬件与运动验收仍未执行。
 
 ## 回滚方式
 
@@ -68,8 +78,14 @@ apt keyring/source 的撤销也必须人工审阅，脚本不会自动删除系�
 - ROS apt key：`ros/rosdistro@eb71c289f4495a0327cd03a29205a2c411cd8129`，
   key SHA-256 `490a879375bd4f3dfbe1483efbf8db8985e2ad66b7a19baee0087b333c67caf0`，
   指纹 `C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654`。
+- robotpkg apt key：SHA-256
+  `0582476e2e90b3666686e6c50d4d58714e8fddb90786db9f42942baf71e67e68`，主指纹
+  `F6F93D4D425860C0B0FBE848ADD535E05E56C3FD`；HTTP 获取的 key 在写入前同时校验两者，
+  apt 索引必须通过该 key 的签名验证。
 - `piper_sdk`：`agilexrobotics/piper_sdk@081e7c588e5b79eeaefa67a0469bcc701c81014f`，MIT；
   仅从 S03 外部 VCS checkout 安装。
-- NumPy、CasADi、Pin、Meshcat 与 python-can：从 PyPI 安装固定的直接版本；本阶段只写
-  安装元数据，不复制其源码或许可证正文。
+- NumPy、Meshcat 与 python-can：从 Python 包索引安装固定直接版本和完整传递闭包。
+- Pinocchio 3.2.0：robotpkg `robotpkg-py38-pinocchio`（BSD-2-Clause）。
+- CasADi 3.6.7：robotpkg `robotpkg-py38-casadi`（LGPL-3.0）。两者仅作为系统依赖安装，
+  不复制源码进项目。
 - 其余上游来源与许可证状态沿用 [`docs/upstream-dependencies.md`](../upstream-dependencies.md)。

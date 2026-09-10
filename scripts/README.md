@@ -4,7 +4,8 @@
 
 - `bootstrap_ubuntu.sh`：安装 Ubuntu 20.04 与 ROS Noetic apt 基线；默认只显示计划
 - `setup_rosdep.sh`：初始化、更新并按工作区安装 rosdep 依赖；先执行模拟
-- `install_python_deps.sh`：在 `.venv` 中安装 Python 3.8 依赖与 S03 固定的 `piper_sdk`
+- `install_python_deps.sh`：创建可访问 Noetic/robotpkg 系统包的 Python 3.8 venv，安装
+  固定依赖，并安装 S03 固定的 `piper_sdk`
 - `build_catkin.sh`：使用 Noetic 与 `.venv` 增量构建 catkin 工作区
 - `check_environment.sh`：只读检查操作系统、apt、ROS、rosdep、Python 和工作区
 
