@@ -1,0 +1,20 @@
+# S03 acquisition manifest. Import into an external source cache, not this
+# repository. pika_locator is intentionally absent: no source repository or
+# commit could be verified from the reference workspace.
+repositories:
+  pika_ros:
+    type: git
+    url: https://github.com/agilexrobotics/pika_ros.git
+    version: ed82f402cebe57aa093d59303215929f0119b0fc
+  PikaAnyArm:
+    type: git
+    url: https://github.com/agilexrobotics/PikaAnyArm.git
+    version: d2b8b84c756d8684cfdd3970741d32d89b248257
+  data_msgs:
+    type: git
+    url: https://github.com/agilexrobotics/data_msgs.git
+    version: 868860123c40a0f7dc96984bb313fdc79afbaa8d
+  piper_sdk:
+    type: git
+    url: https://github.com/agilexrobotics/piper_sdk.git
+    version: 081e7c588e5b79eeaefa67a0469bcc701c81014f
