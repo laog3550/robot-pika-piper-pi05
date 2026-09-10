@@ -36,13 +36,16 @@
 
 ```text
 robot-pika-piper-pi05/
+├── .agents/skills/pi05-stage-sync/ # 阶段验收、文档与 PR 自动化技能
 ├── README.md
 ├── .gitignore
 ├── config/
 │   └── pi05.env.example             # 机器相关变量模板，不保存真实设备配置
 ├── docs/
 │   ├── README.md                    # 文档索引与阶段划分
-│   └── architecture.md              # 节点、话题、服务和安全边界
+│   ├── architecture.md              # 节点、话题、服务和安全边界
+│   ├── status.md                    # 阶段状态与验证等级
+│   └── stages/                      # 每阶段的证据、风险与回滚记录
 ├── scripts/
 │   └── README.md                    # 安装、检查、启动和停机脚本约定
 ├── src/
@@ -67,6 +70,15 @@ robot-pika-piper-pi05/
 ```
 
 Git 不跟踪空目录，因此各预留目录使用说明文件保留。后续实现进入目录后，再删除对应占位说明。
+
+## 阶段协作
+
+在本仓库中使用 Codex 实现、迁移、修复或验收阶段任务时，仓库级
+`$pi05-stage-sync` 技能会在任务完成后整理阶段报告、执行发布门禁，并创建
+`stage/SNN-<slug>` 分支和面向 `main` 的 PR。它不会自动合并 PR，也不会把计划、
+解释、失败测试或缺少真机证据的机械臂变更标记为已经验收。
+
+当前阶段与验证等级见 [`docs/status.md`](docs/status.md)。
 
 ## 计划中的控制链路
 
