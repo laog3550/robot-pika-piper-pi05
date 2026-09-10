@@ -37,14 +37,28 @@ scripts/configure_pika_serial.sh check|apply <left|right> [--config PATH] [--yes
 - `git diff --check`：通过。
 - `skill-creator/scripts/quick_validate.py .agents/skills/pi05-stage-sync`：通过（在临时 Python
   虚拟环境安装 `PyYAML` 后运行；未修改项目或系统 Python 环境）。
+- `scripts/configure_can.sh check left` 与 `check right`：真机通过。左右 USB bus-info
+  分别唯一匹配 `gs_usb` 接口，稳定名为 `left_piper`、`right_piper`，均为 UP 且
+  bitrate 为 1000000。
+- `scripts/configure_pika_serial.sh check left` 与 `check right`：真机通过。左右稳定别名
+  `/dev/pi05-pika-left`、`/dev/pi05-pika-right` 分别唯一解析到现场确认串口。
+- 只读文件存在性检查：左右 CAN 与 Pika 共四份 side-specific udev 规则均存在；真实
+  `config/pi05.env` 由 Git 忽略，公共模板不含现场值。
 
-验证等级为“静态”。本阶段没有在 PI05 上修改现场 udev 规则，没有启动 ROS、读取设备
-通信、使能或移动机械臂。
+因此 S06 达到“真机”验证等级，但该等级仅覆盖双侧物理身份绑定、稳定命名和 CAN
+1 Mbps 链路配置，不覆盖设备数据、ROS 反馈、控制或运动。
 
 ## 真机证据
 
-无新增真机测试。S05 仅有右侧设备映射证据；左侧 CAN/Pika 和双侧 side-specific 规则
-尚未现场验证。因此阶段状态为“等待真机验收”，不得标记为双臂真机通过。
+测试日期：2026-09-10。目标为 x86_64 Ubuntu 20.04 PI05 主机上的左右两台 Piper、
+两只独立 `gs_usb` 适配器和左右两套 Pika 串口。现场操作者沿线确认侧别、迁移右侧
+S05 私有配置、填写左侧私有配置，并分别应用四份 side-specific 规则；随后由操作者和
+本阶段流程重复执行四项只读 check，结果一致通过。
+
+验收记录只保存稳定逻辑名、数量、驱动类别、bitrate 和通过结论；实际 bus-info、
+ID_PATH、VID:PID、临时 tty 名和序列号均未写入仓库。测试没有运行
+`candump`/`cansend`，没有打开 Pika 数据流，没有启动 ROS 控制节点、使能或移动机械臂。
+若任一 check 失败，停止后续启动并保持双臂禁用。
 
 ## 风险、停止与回滚
 
