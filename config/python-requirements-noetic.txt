@@ -1,0 +1,8 @@
+# Direct Python runtime baseline for CPython 3.8 on Ubuntu 20.04.
+# Transitive dependencies are resolved by pip and verified with `pip check`.
+# piper_sdk is deliberately installed from the S03 VCS checkout, not PyPI.
+casadi==3.6.5
+meshcat==0.3.2
+numpy==1.24.4
+pin==2.7.0
+python-can==4.3.1
