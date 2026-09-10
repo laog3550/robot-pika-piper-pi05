@@ -5,6 +5,7 @@
 - [硬件清单](hardware-inventory.md)：目标拓扑、待确认实物与脱敏现场采集命令
 - [软件环境清单](software-environment.md)：支持平台、依赖、参考 SHA 与版本采集命令
 - [环境安装与检查](environment-setup.md)：S04 apt、rosdep、Python 与 catkin 流程
+- [设备配置](device-configuration.md)：S05 CAN bus-info 绑定与 Pika 串口稳定别名
 - [ROS 接口矩阵](ros-interface-matrix.md)：右臂话题、服务、参数、单位与旁路风险
 - [安全约束](safety-constraints.md)：不可妥协约束、状态机、缺口与阶段门禁
 - [上游依赖基线](upstream-dependencies.md)：S03 来源、commit、依赖图、许可证与 VCS 清单
@@ -14,7 +15,7 @@
 1. 硬件清单与接线
 2. PI05 系统和 ROS 环境安装
 3. 上游依赖及版本固定
-4. CAN、串口和 udev 持久化配置
+4. CAN、串口和 udev 持久化配置（S05 已建立流程，等待真机应用验收）
 5. ROS 节点、话题与服务检查
 6. 安全策略和故障处理
 7. 低速真机调试步骤

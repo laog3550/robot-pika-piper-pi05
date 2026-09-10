@@ -32,3 +32,9 @@
 - 回零/返回逻辑在可中断条件下验证
 
 任何阶段失败都应停止进入下一阶段。
+
+## 仓库级脚本测试
+
+- `test_environment_scripts.sh`：S04 环境脚本契约测试。
+- `test_device_configuration_scripts.sh`：S05 check/apply 分离、脱敏发现、安全配置解析和
+  身份歧义拒绝测试；使用模拟命令，不修改主机设备。

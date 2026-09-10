@@ -51,7 +51,10 @@ robot-pika-piper-pi05/
 │   ├── setup_rosdep.sh              # rosdep 初始化、预览与安装
 │   ├── install_python_deps.sh       # Python 3.8 虚拟环境
 │   ├── build_catkin.sh              # 增量 catkin 构建
-│   └── check_environment.sh         # 只读环境检查
+│   ├── check_environment.sh         # 只读环境检查
+│   ├── discover_devices.sh          # 脱敏、只读的 CAN/串口发现
+│   ├── configure_can.sh             # CAN check/apply 与 bus-info 绑定
+│   └── configure_pika_serial.sh     # Pika 串口 check/apply 与稳定别名
 ├── src/
 │   ├── pi05_bringup/
 │   │   ├── CMakeLists.txt
@@ -149,10 +152,18 @@ scripts/install_python_deps.sh --apply
 scripts/setup_rosdep.sh --apply
 scripts/build_catkin.sh
 scripts/check_environment.sh
+
+# 复制私有模板后，只读发现设备；不要按 can0/ttyUSB0 的枚举顺序猜测身份：
+cp config/pi05.env.example config/pi05.env
+scripts/discover_devices.sh
+# 现场沿线确认后填写 config/pi05.env，再先 check、后 apply：
+scripts/configure_can.sh check
+scripts/configure_pika_serial.sh check
 ```
 
-完整步骤和恢复方式见 [`docs/environment-setup.md`](docs/environment-setup.md)。当前 launch
-和控制脚本仍是待迁移入口，**不要在此阶段直接用于机械臂上电运动**。
+环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
+和回滚见 [`docs/device-configuration.md`](docs/device-configuration.md)。当前 launch 和控制
+脚本仍是待迁移入口，**不要在此阶段直接用于机械臂上电运动**。
 
 ## 真机部署安全原则
 
@@ -174,11 +185,12 @@ scripts/check_environment.sh
 
 - [x] 建立 S02 硬件、软件、ROS 接口和安全约束文档基线
 - [ ] 按 S02 现场采集命令确认 PI05 架构、Ubuntu/ROS、实物与安全链路
-- [ ] 确认右单臂的 Piper CAN 接口稳定名称
+- [x] 现场确认并应用右 Piper CAN 与 Pika 串口稳定映射
 - [x] 形成 S03 上游依赖与许可证基线（`pika_locator` 与 Piper ROS 溯源仍为阻塞项）
 - [x] 建立 S04 Ubuntu 20.04 + ROS Noetic 安装、rosdep、Python、构建与检查流程
 - [ ] 迁移右臂 launch、指令过滤器和关节状态桥接
-- [ ] 增加 CAN 检查、启动与安全停机脚本
+- [x] 增加 CAN/串口脱敏发现、check/apply 和持久化规则流程
+- [ ] 增加 ROS/硬件联通检查、启动与安全停机脚本
 - [ ] 建立仿真/回放测试与真机验收表
 - [ ] 在 PI05 上完成低速真机验证并记录结果
 
