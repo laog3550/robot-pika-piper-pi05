@@ -1,0 +1,20 @@
+# Shared conservative defaults. Instantiate once per side and revalidate each
+# side independently at low speed on the target PI05 hardware.
+arm_alpha: 0.35
+arm_deadband_rad: 0.002
+max_arm_step_rad: 0.012
+
+gripper_alpha: 0.25
+gripper_deadband_m: 0.0015
+max_gripper_step_m: 0.0006
+
+speed_percent: 15.0
+command_timeout_s: 0.35
+
+# Automatic return is a motion function and remains disabled until separately
+# risk-assessed and validated for both arms.
+double_gripper_return: false
+gesture_open_m: 0.075
+gesture_closed_m: 0.030
+gesture_timeout_s: 2.0
+return_duration_s: 4.0

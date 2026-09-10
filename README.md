@@ -1,6 +1,6 @@
 # robot-pika-piper-pi05
 
-面向 **PI05 + Pika 遥操作器 + Piper 机械臂** 的 ROS 1 真机部署工程。
+面向 **PI05 + 双 Pika 遥操作器 + 双 Piper 机械臂** 的 ROS 1 真机部署工程。
 
 > 当前状态：项目骨架已建立，尚未完成 PI05 真机联调与验收。机械臂上电前，请先完成 CAN 通信、急停、限位、低速空载和指令超时保护检查。
 
@@ -9,9 +9,9 @@
 本仓库用于把现有 `pika_ros / PikaAnyArm / piper_ros` 工作区中的相关能力整理成一个可复现、可检查、可逐步验收的 PI05 真机部署项目，重点覆盖：
 
 - Ubuntu 20.04、ROS Noetic 与 catkin 工作区安装
-- Pika 右手遥操作器与 Piper 单臂接入
-- USB-CAN 配置与 1 Mbps CAN 通信
-- 机械臂驱动、状态反馈、TF/RViz 可视化
+- 左右 Pika 遥操作器与左右 Piper 双臂接入
+- 两路 USB-CAN 配置、唯一侧别绑定与 1 Mbps CAN 通信
+- 双臂驱动隔离、状态反馈、TF/RViz 可视化
 - 指令死区、低通滤波、单周期步长限制和速度限制
 - 定位丢失、指令超时、停机与重新使能时的安全处理
 - 分阶段真机测试、验收记录与故障排查
@@ -25,10 +25,10 @@
 | Piper CAN 驱动 | `piper_ros/piper` |
 | Piper 消息与服务 | `piper_ros/piper_msgs` |
 | Pika 到 Piper 遥操作 | `pika_remote_piper` |
-| 右臂传感器启动 | `open_right_pika_sensor.launch` |
-| 右臂遥操作编排 | `teleop_right_piper.launch` |
-| 安全指令整形 | `right_arm_command_filter.py` |
-| 关节名可视化桥接 | `right_arm_joint_state_bridge.py` |
+| 右侧参考传感器启动 | `open_right_pika_sensor.launch`（仅作迁移参考） |
+| 右侧参考遥操作编排 | `teleop_right_piper.launch`（需参数化为双侧） |
+| 参考安全指令整形 | `right_arm_command_filter.py`（需改为通用节点） |
+| 参考关节名桥接 | `right_arm_joint_state_bridge.py`（需改为通用节点） |
 
 当前参考环境为 x86_64、Ubuntu 20.04、ROS Noetic；Python 节点使用 Python 3。正式部署前仍需根据 PI05 工控机、CAN 适配器 USB 地址、Pika 串口和机械臂安装方向校准参数。
 
@@ -43,7 +43,8 @@ robot-pika-piper-pi05/
 │   └── pi05.env.example             # 机器相关变量模板，不保存真实设备配置
 ├── docs/
 │   ├── README.md                    # 文档索引与阶段划分
-│   ├── architecture.md              # 节点、话题、服务和安全边界
+│   ├── architecture.md              # 双臂节点、话题、服务和安全边界
+│   ├── roadmap.md                   # S06 之后的双臂阶段目标
 │   ├── status.md                    # 阶段状态与验证等级
 │   └── stages/                      # 每阶段的证据、风险与回滚记录
 ├── scripts/
@@ -60,7 +61,7 @@ robot-pika-piper-pi05/
 │   │   ├── CMakeLists.txt
 │   │   ├── package.xml
 │   │   ├── config/
-│   │   │   └── right_arm_filter.yaml
+│   │   │   └── arm_filter.yaml      # 左右实例共享的保守默认参数
 │   │   └── launch/
 │   │       └── README.md
 │   └── pi05_control/
@@ -87,51 +88,29 @@ Git 不跟踪空目录，因此各预留目录使用说明文件保留。后续�
 
 当前阶段与验证等级见 [`docs/status.md`](docs/status.md)。
 
-## 计划中的控制链路
+## 计划中的双臂控制链路
 
 ```text
-Pika 定位器 + 串口夹爪
-          │
-          ▼
-  原始 JointState 指令
-          │
-          ▼
-pi05_control 安全过滤
-  ├─ 必须已使能且进入新的遥操作会话
-  ├─ 关节/夹爪死区与低通滤波
-  ├─ 单周期最大步长与全局速度限制
-  ├─ 定位丢失和指令超时停止
-  └─ 重新使能时以真实反馈清除旧目标
-          │
-          ▼
-   Piper ROS 控制节点
-          │
-          ▼
-      USB-CAN / Piper
+Pika Left  ─► left filter  ─► /left_arm driver  ─► left_piper
+                         ┐
+                          ├─► dual-arm safety coordinator
+                         ┘
+Pika Right ─► right filter ─► /right_arm driver ─► right_piper
 ```
 
 计划沿用的主要接口如下，最终以 launch 文件和验收记录为准：
 
-- 原始遥操作指令：`/joint_states_gripper_raw_r`
-- 安全过滤后指令：`/joint_states_gripper_r`
-- Piper 反馈：`/joint_states_single_r`
-- 可视化关节状态：`/right_arm/joint_states`
-- 对外使能服务：`/enable_srv`
-- 驱动内部使能服务：`/right_arm/enable_srv_raw`
-- 遥操作触发服务：`/teleop_trigger_r`
-- 定位状态：`/pika_localization_status_r`
+- 左右原始遥操作：`/joint_states_gripper_raw_l`、`/joint_states_gripper_raw_r`
+- 左右过滤后指令：`/joint_states_gripper_l`、`/joint_states_gripper_r`
+- Piper 反馈：`/joint_states_single_l`、`/joint_states_single_r`
+- 驱动命名空间：`/left_arm/*_raw`、`/right_arm/*_raw`
+- 唯一公开使能/停止：`/dual_arm/enable_srv`、`/dual_arm/stop_srv`
+- 遥操作触发与定位状态：`/teleop_trigger_l|r`、`/pika_localization_status_l|r`
 
-## 从 0 到 1 的实施阶段
+## 从 S06 开始的实施阶段
 
-1. **冻结硬件清单**：记录 PI05 主机、Piper 型号/固件、CAN 适配器、Pika 串口、急停与供电。
-2. **安装基础环境**：安装 ROS Noetic、catkin、can-utils、ethtool 和 Python 依赖。
-3. **固定上游版本**：引入并锁定 Pika、Piper SDK/ROS 驱动及消息包版本。
-4. **设备持久化**：为 CAN 与串口建立稳定命名，填写本机私有配置。
-5. **只读联通测试**：不上使能，只检查 CAN 帧、ROS 节点、状态话题和关节反馈。
-6. **安全功能测试**：验证急停、禁用、超时、定位丢失、旧指令清除和限速。
-7. **低速单关节测试**：机械臂腾空、现场有人值守，从最小速度和小步长开始。
-8. **遥操作联调**：确认坐标系、方向、夹爪范围、回零逻辑和工作空间。
-9. **验收与固化**：保存版本、参数、日志、测试结果，并配置受控的开机启动。
+后续工作以双手双臂为唯一交付目标。S07–S16 的目标、退出条件和验证等级见
+[`docs/roadmap.md`](docs/roadmap.md)；右侧历史验收只代表右侧，不自动扩展到左侧。
 
 ## 快速开始（S04 环境阶段）
 
@@ -157,8 +136,10 @@ scripts/check_environment.sh
 cp config/pi05.env.example config/pi05.env
 scripts/discover_devices.sh
 # 现场沿线确认后填写 config/pi05.env，再先 check、后 apply：
-scripts/configure_can.sh check
-scripts/configure_pika_serial.sh check
+scripts/configure_can.sh check left
+scripts/configure_can.sh check right
+scripts/configure_pika_serial.sh check left
+scripts/configure_pika_serial.sh check right
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
@@ -181,18 +162,10 @@ scripts/configure_pika_serial.sh check
 
 ## 下一步
 
-优先完成以下任务：
-
-- [x] 建立 S02 硬件、软件、ROS 接口和安全约束文档基线
-- [ ] 按 S02 现场采集命令确认 PI05 架构、Ubuntu/ROS、实物与安全链路
-- [x] 现场确认并应用右 Piper CAN 与 Pika 串口稳定映射
-- [x] 形成 S03 上游依赖与许可证基线（`pika_locator` 与 Piper ROS 溯源仍为阻塞项）
-- [x] 建立 S04 Ubuntu 20.04 + ROS Noetic 安装、rosdep、Python、构建与检查流程
-- [ ] 迁移右臂 launch、指令过滤器和关节状态桥接
-- [x] 增加 CAN/串口脱敏发现、check/apply 和持久化规则流程
-- [ ] 增加 ROS/硬件联通检查、启动与安全停机脚本
-- [ ] 建立仿真/回放测试与真机验收表
-- [ ] 在 PI05 上完成低速真机验证并记录结果
+- [ ] S07：补齐左/右硬件、供电、急停、安装与上游许可证证据
+- [ ] S08：在双臂禁用条件下完成两路 CAN、两套 Pika 和两臂反馈的只读联通
+- [ ] S09–S11：完成通用分侧驱动、过滤器和双臂安全协调器
+- [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
 
 ## 许可证
 
