@@ -93,12 +93,12 @@ PI05_LEFT_CAN_USB_BUS_INFO=9-9
 PI05_RIGHT_CAN_INTERFACE=can1
 PI05_RIGHT_CAN_BITRATE=1000000
 PI05_RIGHT_CAN_USB_BUS_INFO=8-8
-PI05_LEFT_PIKA_SERIAL_ALIAS=/dev/pi05-pika-left
+PI05_LEFT_PIKA_SERIAL_ALIAS=/dev/pi05-test-pika-left
 PI05_LEFT_PIKA_SERIAL_BAUD=460800
 PI05_LEFT_PIKA_SERIAL_ID_PATH=pci-0000:ff:ff.f-usb-0:9.9:1.0
 PI05_LEFT_PIKA_SERIAL_VENDOR_ID=dead
 PI05_LEFT_PIKA_SERIAL_MODEL_ID=beef
-PI05_RIGHT_PIKA_SERIAL_ALIAS=/dev/pi05-pika-right
+PI05_RIGHT_PIKA_SERIAL_ALIAS=/dev/pi05-test-pika-right
 PI05_RIGHT_PIKA_SERIAL_BAUD=460800
 PI05_RIGHT_PIKA_SERIAL_ID_PATH=pci-0000:ff:ff.f-usb-0:8.8:1.0
 PI05_RIGHT_PIKA_SERIAL_VENDOR_ID=dead
@@ -142,7 +142,7 @@ selected_right_alias=$(bash -c '
   pi05_select_serial_config right
   printf "%s" "$PI05_PIKA_SERIAL_ALIAS"
 ' _ "$repo_root" "$config")
-[[ "$selected_right_alias" == /dev/pi05-pika-right ]] || {
+[[ "$selected_right_alias" == /dev/pi05-test-pika-right ]] || {
   printf 'right serial configuration selected the wrong alias\n' >&2
   exit 1
 }

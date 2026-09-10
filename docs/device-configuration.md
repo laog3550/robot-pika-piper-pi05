@@ -60,8 +60,9 @@ CAN 固定为 1000000 bit/s。每侧使用独立规则文件：
 - `/etc/udev/rules.d/80-pi05-pika-serial-left.rules`
 - `/etc/udev/rules.d/80-pi05-pika-serial-right.rules`
 
-执行后重新运行四项 `check`。只有四项都通过，双侧设备配置才可记为真机验收通过。
-S05 的真机证据仅覆盖右侧，左侧仍待 S07/S08 现场验证。
+执行后重新运行四项 `check`。S06 已取得四项通过和四份分侧规则存在的脱敏真机证据，
+双侧设备配置验收通过。该结论仅覆盖身份绑定、稳定名称和 CAN 1 Mbps 链路状态；设备
+数据和 ROS 反馈仍待 S08 验证。
 
 ## S05 单侧配置迁移
 
