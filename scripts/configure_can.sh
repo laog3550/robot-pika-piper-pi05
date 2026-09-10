@@ -9,15 +9,15 @@ source "$script_dir/lib/device_config.sh"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/configure_can.sh check [--config PATH]
-       scripts/configure_can.sh apply [--config PATH] [--yes]
+Usage: scripts/configure_can.sh check <left|right> [--config PATH]
+       scripts/configure_can.sh apply <left|right> [--config PATH] [--yes]
 
 check  Read-only: require exactly one CAN interface whose ethtool bus-info
-       matches PI05_CAN_USB_BUS_INFO, then verify its name, 1 Mbps bitrate and
+       matches that side's USB bus-info, then verify its name, 1 Mbps bitrate and
        UP state.
 apply  After the same unique identity check and explicit confirmation, rename
        that interface if needed, configure exactly 1000000 bit/s and bring it
-       UP. A udev rule binds the configured name to the gs_usb bus-info on later
+       UP. A side-specific udev rule binds the configured name on later
        device additions. No CAN frames are transmitted.
 
 The default config is config/pi05.env. --yes is valid only with apply.
@@ -28,6 +28,9 @@ EOF
 [[ "$1" != -h && "$1" != --help ]] || { usage; exit 0; }
 mode="$1"; shift
 [[ "$mode" == check || "$mode" == apply ]] || { usage >&2; pi05_die 2 'mode must be check or apply'; }
+(($# >= 1)) || { usage >&2; pi05_die 2 'side is required'; }
+side="$1"; shift
+pi05_validate_side "$side"
 repo_root=$(pi05_repo_root)
 config_file="$repo_root/config/pi05.env"
 assume_yes=false
@@ -44,6 +47,8 @@ done
 
 for command_name in ip ethtool readlink; do pi05_require_command "$command_name"; done
 pi05_load_device_config "$config_file"
+pi05_validate_dual_identity_separation
+pi05_select_can_config "$side"
 pi05_validate_can_config
 
 matches=()
@@ -69,7 +74,7 @@ can_is_ready() {
 
 if [[ "$mode" == check ]]; then
   if can_is_ready; then
-    pi05_log "CAN check passed: $PI05_CAN_INTERFACE uniquely matches configured bus-info and is UP at 1000000 bit/s"
+    pi05_log "$side CAN check passed: $PI05_CAN_INTERFACE uniquely matches configured bus-info and is UP at 1000000 bit/s"
     exit 0
   fi
   pi05_die 1 "CAN identity matched $current_interface, but expected name/UP/1000000 bit/s state is not active"
@@ -80,11 +85,11 @@ pi05_require_command udevadm
 if [[ "$current_interface" != "$PI05_CAN_INTERFACE" ]] && ip link show dev "$PI05_CAN_INTERFACE" >/dev/null 2>&1; then
   pi05_die 6 "target interface $PI05_CAN_INTERFACE already exists and is not the matched USB device"
 fi
-rule_target=/etc/udev/rules.d/80-pi05-can.rules
+rule_target="/etc/udev/rules.d/80-pi05-can-$side.rules"
 rule_tmp=$(mktemp /tmp/pi05-can-rule.XXXXXX)
 trap 'rm -f -- "$rule_tmp"' EXIT
 printf '%s\n' \
-  '# Managed by robot-pika-piper-pi05; binds a physical USB port, not a device serial number.' \
+  "# Managed by robot-pika-piper-pi05 for the $side arm; binds a physical USB port, not a device serial number." \
   "ACTION==\"add\", SUBSYSTEM==\"net\", DRIVERS==\"gs_usb\", KERNELS==\"$PI05_CAN_USB_BUS_INFO\", NAME=\"$PI05_CAN_INTERFACE\"" \
   >"$rule_tmp"
 pi05_confirm_apply "$assume_yes" \

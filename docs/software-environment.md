@@ -109,5 +109,5 @@ git -C <PikaAnyArm> status --porcelain=v1
 
 - PI05 实测平台符合 x86_64 + Ubuntu 20.04 + ROS Noetic，或形成经批准的偏差单。
 - 所有运行/构建依赖有可重复安装的版本来源，不以参考区的 build/install 目录作为唯一来源。
-- `pika_locator`、`piper_sdk` 和右臂本地补丁有明确来源及版本固定方案。
+- `pika_locator`、`piper_sdk` 和需参数化为双侧的参考右臂本地补丁有明确来源及版本固定方案。
 - 许可证 TODO 已登记为后续发布阻塞项。

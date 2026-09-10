@@ -9,8 +9,8 @@
 - `build_catkin.sh`：使用 Noetic 与 `.venv` 增量构建 catkin 工作区
 - `check_environment.sh`：只读检查操作系统、apt、ROS、rosdep、Python 和工作区
 - `discover_devices.sh`：只读列出 CAN 与 Pika 串口候选，不查询设备序列号
-- `configure_can.sh check|apply`：按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps
-- `configure_pika_serial.sh check|apply`：按唯一物理路径和 VID:PID 安装 Pika 串口别名
+- `configure_can.sh check|apply <left|right>`：分侧按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps
+- `configure_pika_serial.sh check|apply <left|right>`：分侧按唯一物理路径和 VID:PID 安装 Pika 串口别名
 
 以下真机运维入口仍为后续阶段预留：
 

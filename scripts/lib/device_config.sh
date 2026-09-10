@@ -7,14 +7,12 @@ pi05_load_device_config() {
   local config_file="$1" line key value
   [[ -r "$config_file" ]] || pi05_die 3 "configuration file not readable: $config_file"
 
-  PI05_CAN_INTERFACE=''
-  PI05_CAN_BITRATE=''
-  PI05_CAN_USB_BUS_INFO=''
-  PI05_PIKA_SERIAL_ALIAS=''
-  PI05_PIKA_SERIAL_BAUD=''
-  PI05_PIKA_SERIAL_ID_PATH=''
-  PI05_PIKA_SERIAL_VENDOR_ID=''
-  PI05_PIKA_SERIAL_MODEL_ID=''
+  local side field
+  for side in LEFT RIGHT; do
+    for field in CAN_INTERFACE CAN_BITRATE CAN_USB_BUS_INFO PIKA_SERIAL_ALIAS PIKA_SERIAL_BAUD PIKA_SERIAL_ID_PATH PIKA_SERIAL_VENDOR_ID PIKA_SERIAL_MODEL_ID; do
+      printf -v "PI05_${side}_${field}" '%s' ''
+    done
+  done
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     line=${line%%#*}
@@ -25,13 +23,58 @@ pi05_load_device_config() {
     key=${BASH_REMATCH[1]}
     value=${BASH_REMATCH[2]}
     case "$key" in
-      PI05_CAN_INTERFACE|PI05_CAN_BITRATE|PI05_CAN_USB_BUS_INFO|PI05_PIKA_SERIAL_ALIAS|PI05_PIKA_SERIAL_BAUD|PI05_PIKA_SERIAL_ID_PATH|PI05_PIKA_SERIAL_VENDOR_ID|PI05_PIKA_SERIAL_MODEL_ID)
+      PI05_LEFT_CAN_INTERFACE|PI05_LEFT_CAN_BITRATE|PI05_LEFT_CAN_USB_BUS_INFO|PI05_RIGHT_CAN_INTERFACE|PI05_RIGHT_CAN_BITRATE|PI05_RIGHT_CAN_USB_BUS_INFO|PI05_LEFT_PIKA_SERIAL_ALIAS|PI05_LEFT_PIKA_SERIAL_BAUD|PI05_LEFT_PIKA_SERIAL_ID_PATH|PI05_LEFT_PIKA_SERIAL_VENDOR_ID|PI05_LEFT_PIKA_SERIAL_MODEL_ID|PI05_RIGHT_PIKA_SERIAL_ALIAS|PI05_RIGHT_PIKA_SERIAL_BAUD|PI05_RIGHT_PIKA_SERIAL_ID_PATH|PI05_RIGHT_PIKA_SERIAL_VENDOR_ID|PI05_RIGHT_PIKA_SERIAL_MODEL_ID)
         printf -v "$key" '%s' "$value"
         ;;
-      PI05_ROS_DISTRO|PI05_ARM_SIDE|PI05_AUTO_ENABLE) ;;
+      PI05_ROS_DISTRO|PI05_ARM_MODE|PI05_AUTO_ENABLE) ;;
       *) pi05_die 3 "unknown configuration key: $key" ;;
     esac
   done <"$config_file"
+}
+
+pi05_validate_side() {
+  [[ "$1" == left || "$1" == right ]] || pi05_die 2 'side must be left or right'
+}
+
+pi05_select_can_config() {
+  local side="$1" prefix interface_key bitrate_key bus_info_key
+  pi05_validate_side "$side"
+  prefix="PI05_${side^^}_CAN"
+  interface_key="${prefix}_INTERFACE"
+  bitrate_key="${prefix}_BITRATE"
+  bus_info_key="${prefix}_USB_BUS_INFO"
+  PI05_CAN_INTERFACE=${!interface_key}
+  PI05_CAN_BITRATE=${!bitrate_key}
+  PI05_CAN_USB_BUS_INFO=${!bus_info_key}
+  PI05_DEVICE_SIDE=$side
+}
+
+pi05_select_serial_config() {
+  local side="$1" prefix alias_key baud_key path_key vendor_key model_key
+  pi05_validate_side "$side"
+  prefix="PI05_${side^^}_PIKA_SERIAL"
+  alias_key="${prefix}_ALIAS"
+  baud_key="${prefix}_BAUD"
+  path_key="${prefix}_ID_PATH"
+  vendor_key="${prefix}_VENDOR_ID"
+  model_key="${prefix}_MODEL_ID"
+  PI05_PIKA_SERIAL_ALIAS=${!alias_key}
+  PI05_PIKA_SERIAL_BAUD=${!baud_key}
+  PI05_PIKA_SERIAL_ID_PATH=${!path_key}
+  PI05_PIKA_SERIAL_VENDOR_ID=${!vendor_key}
+  PI05_PIKA_SERIAL_MODEL_ID=${!model_key}
+  PI05_DEVICE_SIDE=$side
+}
+
+pi05_validate_dual_identity_separation() {
+  [[ -z "$PI05_LEFT_CAN_INTERFACE" || -z "$PI05_RIGHT_CAN_INTERFACE" || "$PI05_LEFT_CAN_INTERFACE" != "$PI05_RIGHT_CAN_INTERFACE" ]] ||
+    pi05_die 3 'left and right CAN interface names must differ'
+  [[ -z "$PI05_LEFT_CAN_USB_BUS_INFO" || -z "$PI05_RIGHT_CAN_USB_BUS_INFO" || "$PI05_LEFT_CAN_USB_BUS_INFO" != "$PI05_RIGHT_CAN_USB_BUS_INFO" ]] ||
+    pi05_die 3 'left and right CAN bus-info values must differ'
+  [[ -z "$PI05_LEFT_PIKA_SERIAL_ALIAS" || -z "$PI05_RIGHT_PIKA_SERIAL_ALIAS" || "$PI05_LEFT_PIKA_SERIAL_ALIAS" != "$PI05_RIGHT_PIKA_SERIAL_ALIAS" ]] ||
+    pi05_die 3 'left and right Pika serial aliases must differ'
+  [[ -z "$PI05_LEFT_PIKA_SERIAL_ID_PATH" || -z "$PI05_RIGHT_PIKA_SERIAL_ID_PATH" || "$PI05_LEFT_PIKA_SERIAL_ID_PATH" != "$PI05_RIGHT_PIKA_SERIAL_ID_PATH" ]] ||
+    pi05_die 3 'left and right Pika serial ID_PATH values must differ'
 }
 
 pi05_validate_can_config() {

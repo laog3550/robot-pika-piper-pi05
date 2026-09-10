@@ -1,53 +1,38 @@
-# PI05 控制架构
+# PI05 双臂控制架构
 
-> 本页是计划架构概览，不代表当前参考实现已经满足安全约束。真机门禁、已知旁路和未验证行为以 [S02 安全约束](safety-constraints.md) 与 [ROS 接口矩阵](ros-interface-matrix.md) 为准。
+> 这是目标架构，不代表当前真机已经满足放行条件。S05 只验证了右侧设备映射。
 
-## 组件边界
-
-| 组件 | 职责 | 预期来源 |
-|---|---|---|
-| Pika 传感与定位 | 发布手柄位姿、夹爪和定位状态 | Pika SDK / pika_ros |
-| 遥操作解算 | 将位姿转换为 Piper 关节目标 | PikaAnyArm |
-| pi05_control | 过滤、限速、看门狗和状态桥接 | 本仓库 |
-| Piper ROS 驱动 | ROS 与 Piper SDK/CAN 之间的适配 | piper_ros |
-| pi05_bringup | 参数装载、命名空间、重映射与启动顺序 | 本仓库 |
-
-## 数据流
+## 目标拓扑
 
 ```text
-Pika pose + gripper
-        │
-        ▼
-teleoperation IK
-        │ /joint_states_gripper_raw_r
-        ▼
-command safety filter
-        │ /joint_states_gripper_r
-        ▼
-Piper ROS driver ─── USB-CAN ─── Piper
-        │
-        ├─ /joint_states_single_r ──► feedback/safety state
-        └─ /right_arm/joint_states ─► robot_state_publisher/RViz
+Pika Left  ─► left teleop  ─► left safety filter  ─► /left_arm driver  ─► left_piper
+       │                              │                        │
+       └──── localization/status ─────┤                        └─ left CAN
+                                      ├─► dual-arm safety coordinator
+       ┌──── localization/status ─────┤       │
+Pika Right ─► right teleop ─► right safety filter ─► /right_arm driver ─► right_piper
+                                                               └─ right CAN
 ```
 
-## 安全状态边界
+左右链路使用相同代码和参数结构，以 `side:=left|right`、命名空间和 remap 实例化；禁止
+维护两份逐渐分叉的控制实现。每侧拥有独立的设备身份、反馈、命令过滤器、看门狗和驱动。
 
-运动命令只有在以下条件同时成立时才可透传：
+## 安全所有权
 
-1. Piper 驱动已成功使能；
-2. 当前遥操作会话在使能后重新建立；
-3. 已收到有效的机械臂真实关节反馈；
-4. Pika 定位状态有效；
-5. 指令流未超过超时阈值；
-6. 指令经死区、低通、最大步长和速度限制处理。
+- 分侧过滤器只允许向本侧驱动内部命令入口发布。
+- 双臂协调器是公开 enable/stop 的唯一入口，并汇总双侧通信、定位、反馈和故障状态。
+- 双手协同会话中，任一侧关键状态失效都撤销整个会话；默认对双侧执行经验证的
+  hold/stop/disable 策略，不允许另一侧继续执行缓存轨迹。
+- 硬件急停独立于 PI05、ROS 和上述协调器，必须覆盖两台机械臂。
+- 原始 driver 服务和话题只存在于 `/left_arm/*_raw`、`/right_arm/*_raw` 内部边界。
 
-禁用、重新使能、退出遥操作、定位丢失或指令超时都必须清除旧目标。重新开始时，以真实反馈作为安全初值。
-
-## 启动顺序
+## 启停顺序
 
 ```text
-设备检查 → CAN 激活 → ROS Master → Piper 驱动（默认不自动使能）
-→ 状态反馈检查 → Pika 设备 → 安全过滤 → 遥操作 → 人工使能
+双侧设备检查 → 两路 CAN 激活 → ROS Master
+→ 左右驱动（auto_enable=false）→ 双侧反馈检查
+→ 左右 Pika → 分侧过滤器 → 双臂协调器 → 遥操作 → 人工使能
 ```
 
-停机顺序与运动风险相关：先停止遥操作和命令源，再禁用机械臂，最后退出驱动和关闭 CAN 接口。
+停机时先终止双手会话和命令源，再停止/禁用两臂，最后退出驱动并关闭两路 CAN。单侧
+调试必须显式选择侧别，另一侧保持禁用；它是验收步骤，不是最终运行模式。

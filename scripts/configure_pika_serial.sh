@@ -9,13 +9,13 @@ source "$script_dir/lib/device_config.sh"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/configure_pika_serial.sh check [--config PATH]
-       scripts/configure_pika_serial.sh apply [--config PATH] [--yes]
+Usage: scripts/configure_pika_serial.sh check <left|right> [--config PATH]
+       scripts/configure_pika_serial.sh apply <left|right> [--config PATH] [--yes]
 
 check  Read-only: require exactly one ttyUSB/ttyACM device matching the
        configured ID_PATH + VID + PID identity and verify the configured alias.
 apply  After the same unique identity check and explicit confirmation, install
-       /etc/udev/rules.d/80-pi05-pika-serial.rules and reload only that tty.
+       a side-specific udev rule and reload only that tty.
 
 Serial numbers and /dev/serial/by-id values are neither required nor printed.
 The default config is config/pi05.env. --yes is valid only with apply.
@@ -26,6 +26,9 @@ EOF
 [[ "$1" != -h && "$1" != --help ]] || { usage; exit 0; }
 mode="$1"; shift
 [[ "$mode" == check || "$mode" == apply ]] || { usage >&2; pi05_die 2 'mode must be check or apply'; }
+(($# >= 1)) || { usage >&2; pi05_die 2 'side is required'; }
+side="$1"; shift
+pi05_validate_side "$side"
 repo_root=$(pi05_repo_root)
 config_file="$repo_root/config/pi05.env"
 assume_yes=false
@@ -42,6 +45,8 @@ done
 
 for command_name in find udevadm readlink; do pi05_require_command "$command_name"; done
 pi05_load_device_config "$config_file"
+pi05_validate_dual_identity_separation
+pi05_select_serial_config "$side"
 pi05_validate_serial_config
 
 matches=()
@@ -64,18 +69,18 @@ serial_alias_is_ready() {
 
 if [[ "$mode" == check ]]; then
   serial_alias_is_ready && {
-    pi05_log "Pika serial check passed: $PI05_PIKA_SERIAL_ALIAS uniquely resolves to the configured physical USB path"
+    pi05_log "$side Pika serial check passed: $PI05_PIKA_SERIAL_ALIAS uniquely resolves to the configured physical USB path"
     exit 0
   }
   pi05_die 1 "Pika identity matched $matched_device, but alias $PI05_PIKA_SERIAL_ALIAS is absent or points elsewhere"
 fi
 
 pi05_require_command sudo
-rule_target=/etc/udev/rules.d/80-pi05-pika-serial.rules
+rule_target="/etc/udev/rules.d/80-pi05-pika-serial-$side.rules"
 rule_tmp=$(mktemp /tmp/pi05-pika-serial-rule.XXXXXX)
 trap 'rm -f -- "$rule_tmp"' EXIT
 printf '%s\n' \
-  '# Managed by robot-pika-piper-pi05; identity intentionally excludes serial numbers.' \
+  "# Managed by robot-pika-piper-pi05 for the $side hand; identity intentionally excludes serial numbers." \
   "SUBSYSTEM==\"tty\", ENV{ID_PATH}==\"$PI05_PIKA_SERIAL_ID_PATH\", ENV{ID_VENDOR_ID}==\"${PI05_PIKA_SERIAL_VENDOR_ID,,}\", ENV{ID_MODEL_ID}==\"${PI05_PIKA_SERIAL_MODEL_ID,,}\", SYMLINK+=\"$PI05_PIKA_SERIAL_ALIAS_NAME\", GROUP=\"dialout\", MODE=\"0660\"" \
   >"$rule_tmp"
 pi05_confirm_apply "$assume_yes" \
