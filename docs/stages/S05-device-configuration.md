@@ -48,16 +48,28 @@ apply 必须明确分离，设备身份不唯一时禁止修改。
 - 对当前两个 CAN 候选执行只读 sysfs 祖先核对：两者的 `ethtool bus-info` 均是可用于
   `KERNELS` udev 匹配的物理端口标记。
 
-验证等级为“静态”。脚本契约和只读发现已验证，但没有执行 apply，也没有确认哪一条
-物理线缆属于右 Piper/Pika。
+完成现场配置后再次执行：
+
+- `scripts/configure_can.sh check`：通过。右 Piper 配置的 USB bus-info 唯一匹配
+  `gs_usb` 接口；稳定名为 `right_piper`，链路为 UP/ERROR-ACTIVE，bitrate 为
+  1000000。未记录实际 bus-info。
+- `scripts/configure_pika_serial.sh check`：通过。`/dev/pi05-pika-right` 唯一解析到现场
+  确认的 Pika 串口；未记录内核临时 tty 名、ID_PATH、VID:PID 或序列号。
+- 只读文件存在性检查：通过。两份受管 udev 规则均已安装，真实
+  `config/pi05.env` 存在且由 Git 忽略，公共模板无现场值。
+
+因此 S05 达到“真机”验证等级，但该等级仅覆盖 CAN/串口身份绑定和接口配置，不覆盖
+Piper/Pika 数据通信、ROS 节点或机械臂运动。
 
 ## 真机证据
 
-未执行配置或通信验收。没有关闭/重命名 CAN 接口、没有安装 udev 规则、没有打开 Pika
-串口、没有监听或发送 CAN 帧，也没有启动 ROS 节点、使能机械臂或发送运动指令。
+测试日期：2026-09-10。目标为 x86_64 Ubuntu 20.04 PI05 主机上的单右 Piper 与单右
+Pika 配置。现场操作者沿线确认设备身份后执行 apply；随后由操作者和本阶段流程分别
+执行上述两项只读 check，结果一致通过。
 
-由于当前存在多个 CAN 与串口候选，必须由现场负责人沿线确认物理身份。S05 状态为
-“等待真机验收”。
+验收只观察接口状态、bitrate、稳定别名和规则存在性。未打开 Pika 串口，未运行
+`candump`/`cansend`，未启动 ROS 节点，未使能机械臂，也未发送运动指令。若 check
+失败，停止后续启动并保持机械臂禁用；系统规则的回滚方式见下文。
 
 ## 风险与限制
 

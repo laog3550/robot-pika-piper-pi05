@@ -185,7 +185,7 @@ scripts/configure_pika_serial.sh check
 
 - [x] 建立 S02 硬件、软件、ROS 接口和安全约束文档基线
 - [ ] 按 S02 现场采集命令确认 PI05 架构、Ubuntu/ROS、实物与安全链路
-- [ ] 现场确认并应用右 Piper CAN 与 Pika 串口稳定映射
+- [x] 现场确认并应用右 Piper CAN 与 Pika 串口稳定映射
 - [x] 形成 S03 上游依赖与许可证基线（`pika_locator` 与 Piper ROS 溯源仍为阻塞项）
 - [x] 建立 S04 Ubuntu 20.04 + ROS Noetic 安装、rosdep、Python、构建与检查流程
 - [ ] 迁移右臂 launch、指令过滤器和关节状态桥接
