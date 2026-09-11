@@ -14,6 +14,12 @@
 - `check_s07_hardware.sh`：只读校验 Git 忽略的 S07 双侧硬件现场记录，不访问设备
 - `check_upstream_manifest.sh`：严格校验固定 commit 清单；可选 `--remote` 在临时裸仓库
   核对远端 commit 和根许可证
+- `check_pika_stream.sh <left|right>`：S08 分侧只读检查 Pika JSON 完整率和候选频率；
+  不写串口、不显示或保存传感器值
+- `check_piper_can_stream.sh <left|right>`：S08 分侧被动检查 Piper 标准反馈 ID，并拒绝
+  观察到控制/配置 ID 的窗口；不发送帧、不显示或保存 payload
+- `check_pika_localization.sh`：S08 订阅既有左右 Pika 位姿/有效状态，只报告汇总频率和
+  有效样本数；不启动定位节点、不显示坐标或设备标识
 
 以下真机运维入口仍为后续阶段预留：
 

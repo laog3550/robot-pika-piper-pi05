@@ -11,6 +11,7 @@
 - [上游依赖基线](upstream-dependencies.md)：S03 来源、commit、依赖图、许可证与 VCS 清单
 - [双臂路线图](roadmap.md)：S06 纠偏及 S07–S16 阶段目标与退出条件
 - [S07 双侧硬件现场验收](s07-field-acceptance.md)：无运动的型号、固件、供电、终端、急停与安装复核
+- [S08 双侧只读通信](s08-readonly-communication.md)：CAN/Pika 被动检查、双侧定位与 Piper ROS 原始反馈验收
 
 后续文档将按真机部署顺序维护：
 

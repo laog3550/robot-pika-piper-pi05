@@ -1,0 +1,22 @@
+<launch>
+  <arg name="left_can_interface" default="left_piper"/>
+  <arg name="right_can_interface" default="right_piper"/>
+
+  <group ns="left_arm">
+    <node pkg="pi05_control" type="piper_readonly_feedback_node.py"
+          name="piper_readonly_feedback" output="screen" required="true">
+      <param name="side" value="left"/>
+      <param name="can_interface" value="$(arg left_can_interface)"/>
+      <param name="joint_state_topic" value="joint_states_raw"/>
+    </node>
+  </group>
+
+  <group ns="right_arm">
+    <node pkg="pi05_control" type="piper_readonly_feedback_node.py"
+          name="piper_readonly_feedback" output="screen" required="true">
+      <param name="side" value="right"/>
+      <param name="can_interface" value="$(arg right_can_interface)"/>
+      <param name="joint_state_topic" value="joint_states_raw"/>
+    </node>
+  </group>
+</launch>

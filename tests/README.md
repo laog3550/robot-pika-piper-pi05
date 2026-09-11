@@ -41,3 +41,10 @@
 - `test_s07_hardware.sh`：S07 现场记录字段、双人复核、安全结论、危险文本与疑似敏感
   标识拒绝测试；不访问硬件。
 - `test_upstream_manifest.sh`：固定 commit、受限清单结构和未知字段拒绝测试。
+- `test_pika_stream_checker.sh`：S08 Pika 完整/截断/空流、参数校验和只读 API 约束测试。
+- `test_piper_can_stream_checker.sh`：S08 Piper CAN 反馈 ID 完整性、控制 ID 拒绝和无发送
+  API 约束测试。
+- `test_piper_readonly_feedback.sh`：S08 Piper 协议端序/单位/完整帧组，以及双侧 ROS
+  launch、无 CAN 发送 API、无命令入口契约测试。
+- `test_pika_localization_checker.sh`：S08 双侧定位频率、有效状态、时间戳、frame 稳定性
+  聚合判断和无写入 API 契约测试。
