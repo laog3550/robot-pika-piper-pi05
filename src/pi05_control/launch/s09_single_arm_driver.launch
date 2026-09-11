@@ -1,0 +1,41 @@
+<launch>
+  <!-- Required: invalid or omitted sides fail during substitution. -->
+  <arg name="side"/>
+  <arg name="start_driver" default="false"/>
+
+  <!--
+    The approved upstream piper_ros@ac41fcbc node transmits MotionCtrl_2 during
+    construction, even with auto_enable=false. Keep startup opt-in and never
+    use this launch as a read-only diagnostic entry point.
+  -->
+  <group ns="$(eval {'left': 'left_arm', 'right': 'right_arm'}[arg('side')])">
+    <node if="$(arg start_driver)"
+          pkg="piper"
+          type="piper_ctrl_single_node.py"
+          name="piper_driver_raw"
+          output="screen"
+          required="true">
+      <param name="can_port"
+             value="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
+      <param name="auto_enable" value="false"/>
+      <param name="gripper_exist" value="true"/>
+      <param name="gripper_val_mutiple" value="1"/>
+
+      <remap from="joint_ctrl_single" to="joint_ctrl_raw"/>
+      <remap from="pos_cmd" to="pos_cmd_raw"/>
+      <remap from="enable_flag" to="enable_flag_raw"/>
+
+      <remap from="joint_states_single" to="joint_states_driver_raw"/>
+      <remap from="arm_status" to="arm_status"/>
+      <remap from="end_pose_euler" to="end_pose_euler_raw"/>
+      <remap from="end_pose" to="end_pose_raw"/>
+
+      <remap from="enable_srv" to="enable_srv_raw"/>
+      <remap from="stop_srv" to="stop_srv_raw"/>
+      <remap from="gripper_srv" to="gripper_srv_raw"/>
+      <remap from="reset_srv" to="reset_srv_raw"/>
+      <remap from="go_zero_srv" to="go_zero_srv_raw"/>
+      <remap from="block_arm" to="block_arm_raw"/>
+    </node>
+  </group>
+</launch>

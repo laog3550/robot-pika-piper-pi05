@@ -24,4 +24,5 @@ install(DIRECTORY launch
 
 if(CATKIN_ENABLE_TESTING)
   catkin_add_nosetests(test/test_piper_feedback.py)
+  catkin_add_nosetests(test/test_single_arm_driver_launch.py)
 endif()

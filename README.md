@@ -157,11 +157,18 @@ source devel/setup.bash
 roslaunch pi05_control s08_readonly_feedback.launch
 # 定位发布者已由现场批准并启动后，只读检查双侧位姿和 accurate 状态：
 scripts/check_pika_localization.sh --duration 10
+
+# S09：只展开并审查分侧驱动节点名称，不执行驱动：
+roslaunch --nodes src/pi05_control/launch/s09_single_arm_driver.launch \
+  side:=left start_driver:=true
+roslaunch --nodes src/pi05_control/launch/s09_single_arm_driver.launch \
+  side:=right start_driver:=true
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
-和回滚见 [`docs/device-configuration.md`](docs/device-configuration.md)。当前 launch 和控制
-脚本仍是待迁移入口，**不要在此阶段直接用于机械臂上电运动**。
+和回滚见 [`docs/device-configuration.md`](docs/device-configuration.md)。S09 launch 默认
+不启动驱动；显式启动仍会发送 CAN 模式帧，控制脚本也尚未迁移，**不要在此阶段直接
+用于机械臂上电运动**。
 
 ## 真机部署安全原则
 
@@ -182,7 +189,8 @@ scripts/check_pika_localization.sh --duration 10
 - [ ] S07：上游来源已按选择/排除策略闭环；等待左/右硬件、供电、急停与安装现场记录
 - [x] S08：双侧 CAN、Pika 串口/定位及 Piper 原始 ROS 反馈已完成只读真机验证；
   URDF 关节名、安装方向与零点适配留待后续驱动阶段
-- [ ] S09–S11：完成通用分侧驱动、过滤器和双臂安全协调器
+- [ ] S09：通用分侧驱动封装已完成构建验证，等待后续阶段的受控真机验收
+- [ ] S10–S11：完成通用安全过滤器和双臂安全协调器
 - [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
 
 ## 许可证

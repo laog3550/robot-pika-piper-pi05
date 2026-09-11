@@ -15,6 +15,7 @@
 /.venv.isolated-backup-*/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 
 # IDE / OS

@@ -6,7 +6,8 @@
 - `setup_rosdep.sh`：初始化、更新并按工作区安装 rosdep 依赖；先执行模拟
 - `install_python_deps.sh`：创建可访问 Noetic/robotpkg 系统包的 Python 3.8 venv，安装
   固定依赖，并安装 S03 固定的 `piper_sdk`
-- `build_catkin.sh`：使用 Noetic 与 `.venv` 增量构建 catkin 工作区
+- `build_catkin.sh`：使用 Noetic 与 `.venv` 增量构建 catkin 工作区；`--install` 使用
+  与 venv 兼容的非 Debian Python 安装布局
 - `check_environment.sh`：只读检查操作系统、apt、ROS、rosdep、Python 和工作区
 - `discover_devices.sh`：只读列出 CAN 与 Pika 串口候选，不查询设备序列号
 - `configure_can.sh check|apply <left|right>`：分侧按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps

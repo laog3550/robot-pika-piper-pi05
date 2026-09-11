@@ -28,6 +28,10 @@
 | `/teleop_status_{s}` | `data_msgs/TeleopStatus` | 分侧会话状态 | 安全关键状态 |
 | `/arm_control_status_{s}` | `data_msgs/ArmControlStatus` | IK/限位状态 | 安全提示 |
 | `/{side}_arm/joint_states_raw` | `sensor_msgs/JointState` | S08 协议原始反馈：6 关节 rad + 夹爪行程 m | 已真机验证；禁止作控制目标 |
+| `/{side}_arm/joint_states_driver_raw` | `sensor_msgs/JointState` | S09 官方驱动原始反馈 | 仅构建验证；尚未做 URDF 适配 |
+| `/{side}_arm/joint_ctrl_raw` | `sensor_msgs/JointState` | S09 官方驱动关节命令 | 内部运动入口；禁止直接发布 |
+| `/{side}_arm/pos_cmd_raw` | `piper_msgs/PosCmd` | S09 官方驱动末端命令 | 内部运动入口；禁止直接发布 |
+| `/{side}_arm/enable_flag_raw` | `std_msgs/Bool` | S09 官方驱动使能订阅 | 内部使能入口；禁止直接发布 |
 | `/{side}_arm/joint_states` | `sensor_msgs/JointState` | URDF 兼容反馈 | 只读 |
 | `/{side}_arm/arm_status` | `piper_msgs/PiperStatusMsg` | 驱动/通信/错误状态 | 安全关键反馈 |
 
@@ -43,6 +47,7 @@
 | `/{side}_arm/stop_srv_raw` | 对应 Piper driver | 内部入口；行为需分侧真机验证 |
 | `/{side}_arm/gripper_srv_raw` | 对应 Piper driver | 可直接动作，必须隔离 |
 | `/{side}_arm/reset_srv_raw`、`go_zero_srv_raw` | 对应 Piper driver | 默认不公开、不自动启动 |
+| `/{side}_arm/block_arm_raw` | 对应 Piper driver | 内部命令阻断开关；行为尚未真机验证 |
 
 驱动原有 `/enable_flag`、`/pos_cmd`、`/gripper_srv`、`/go_zero_srv` 等全局入口必须在
 bringup 中 remap 到对应侧的 `*_raw` 内部名称，或禁用。ROS graph 审计发现全局运动入口、
@@ -86,3 +91,7 @@ done
 
 还必须分别确认 `/left_arm` 与 `/right_arm` 的 `can_port`、`auto_enable=false`，以及所有
 命令话题只有预期的分侧过滤器发布。
+
+S09 的 `s09_single_arm_driver.launch` 以 `side:=left|right` 选择上述单侧命名空间，默认
+`start_driver=false` 且固定 `auto_enable=false`。官方节点启动时仍会发送模式帧，因此
+S09 只验证 launch 展开与构建，不得在真机上设置 `start_driver:=true`。
