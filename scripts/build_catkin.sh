@@ -82,6 +82,9 @@ fi
 pi05_log "building $workspace with $venv_path/bin/python and $jobs jobs"
 build_args=(-C "$workspace" "-j$jobs" -DPYTHON_EXECUTABLE="$venv_path/bin/python" -DCMAKE_BUILD_TYPE=RelWithDebInfo)
 if [[ "$make_install" == true ]]; then
+  # The managed venv uses upstream distutils/setuptools, which does not accept
+  # Debian's patched --install-layout option used by the system interpreter.
+  build_args+=(-DSETUPTOOLS_DEB_LAYOUT=OFF)
   build_args+=(install)
 fi
 catkin_make "${build_args[@]}"

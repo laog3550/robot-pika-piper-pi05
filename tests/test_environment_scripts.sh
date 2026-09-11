@@ -70,6 +70,15 @@ printf '%s\n' ':' >"$fake_dir/venv/bin/activate"
   --skip-rosdep-check >"$fake_dir/build.out"
 grep -q 'catkin build complete' "$fake_dir/build.out"
 
+"$repo_root/scripts/build_catkin.sh" \
+  --workspace "$fake_dir/catkin" \
+  --venv "$fake_dir/venv" \
+  --jobs 2 \
+  --skip-rosdep-check \
+  --install >"$fake_dir/install.out"
+grep -q 'catkin build complete' "$fake_dir/install.out"
+grep -q 'SETUPTOOLS_DEB_LAYOUT=OFF' "$fake_dir/install.out"
+
 if "$repo_root/scripts/bootstrap_ubuntu.sh" --yes >/dev/null 2>&1; then
   printf '%s\n' '--yes without --apply unexpectedly succeeded' >&2
   exit 1

@@ -96,6 +96,10 @@ scripts/check_environment.sh
 scripts/build_catkin.sh --install
 ```
 
+安装模式会对使用项目 venv 的 catkin 显式设置 `SETUPTOOLS_DEB_LAYOUT=OFF`，避免把仅由
+Ubuntu 系统 Python 支持的 `--install-layout=deb` 参数传给 venv distutils。普通构建不
+改变此选项。
+
 `check_environment.sh` 完全只读；任何必需项缺失都返回 1。它不会连接 CAN、枚举设备
 序列号或启动 ROS master。硬件联通与运动验收不属于 S04。
 

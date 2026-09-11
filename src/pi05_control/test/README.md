@@ -11,3 +11,8 @@
 - JointState 长度、名称和异常输入处理
 
 优先使用不连接真机的单元测试和 ROS 回放测试。
+
+当前已有：
+
+- `test_piper_feedback.py`：S08 Piper 原始反馈端序、单位和完整帧组。
+- `test_single_arm_driver_launch.py`：S09 必填 side、安全默认值及全部驱动接口分侧 remap。
