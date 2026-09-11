@@ -11,6 +11,9 @@
 - `discover_devices.sh`：只读列出 CAN 与 Pika 串口候选，不查询设备序列号
 - `configure_can.sh check|apply <left|right>`：分侧按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps
 - `configure_pika_serial.sh check|apply <left|right>`：分侧按唯一物理路径和 VID:PID 安装 Pika 串口别名
+- `check_s07_hardware.sh`：只读校验 Git 忽略的 S07 双侧硬件现场记录，不访问设备
+- `check_upstream_manifest.sh`：严格校验固定 commit 清单；可选 `--remote` 在临时裸仓库
+  核对远端 commit 和根许可证
 
 以下真机运维入口仍为后续阶段预留：
 

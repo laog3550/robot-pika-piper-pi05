@@ -38,3 +38,6 @@
 - `test_environment_scripts.sh`：S04 环境脚本契约测试。
 - `test_device_configuration_scripts.sh`：S05 check/apply 分离、脱敏发现、安全配置解析和
   身份歧义拒绝测试；使用模拟命令，不修改主机设备。
+- `test_s07_hardware.sh`：S07 现场记录字段、双人复核、安全结论、危险文本与疑似敏感
+  标识拒绝测试；不访问硬件。
+- `test_upstream_manifest.sh`：固定 commit、受限清单结构和未知字段拒绝测试。

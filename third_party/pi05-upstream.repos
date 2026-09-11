@@ -1,6 +1,6 @@
-# S03 acquisition manifest. Import into an external source cache, not this
-# repository. pika_locator is intentionally absent: no source repository or
-# commit could be verified from the reference workspace.
+# S03/S07 audit and acquisition manifest. Import into an external source cache,
+# not this repository and not directly into one catkin workspace. pika_locator
+# remains absent because its source repository and commit cannot be verified.
 repositories:
   pika_ros:
     type: git
@@ -18,3 +18,11 @@ repositories:
     type: git
     url: https://github.com/agilexrobotics/piper_sdk.git
     version: 081e7c588e5b79eeaefa67a0469bcc701c81014f
+  piper_ros:
+    type: git
+    url: https://github.com/agilexrobotics/piper_ros.git
+    version: ac41fcbcdda598f01b51cf6175ed9a24d0dacadc
+  libsurvive:
+    type: git
+    url: https://github.com/cntools/libsurvive.git
+    version: f1e6eddb669320f2a30760f4b42936bdb4306da0

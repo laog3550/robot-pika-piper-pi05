@@ -53,6 +53,8 @@ robot-pika-piper-pi05/
 │   ├── install_python_deps.sh       # Python 3.8 虚拟环境
 │   ├── build_catkin.sh              # 增量 catkin 构建
 │   ├── check_environment.sh         # 只读环境检查
+│   ├── check_upstream_manifest.sh   # 固定 commit 与许可证远端校验
+│   ├── check_s07_hardware.sh        # S07 本地硬件记录校验
 │   ├── discover_devices.sh          # 脱敏、只读的 CAN/串口发现
 │   ├── configure_can.sh             # CAN check/apply 与 bus-info 绑定
 │   └── configure_pika_serial.sh     # Pika 串口 check/apply 与稳定别名
@@ -140,6 +142,10 @@ scripts/configure_can.sh check left
 scripts/configure_can.sh check right
 scripts/configure_pika_serial.sh check left
 scripts/configure_pika_serial.sh check right
+
+# S07：按现场清单填写 Git 忽略的硬件记录；校验器不访问设备：
+cp config/s07-hardware.env.example config/s07-hardware.env
+scripts/check_s07_hardware.sh
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
@@ -162,7 +168,7 @@ scripts/configure_pika_serial.sh check right
 
 ## 下一步
 
-- [ ] S07：补齐左/右硬件、供电、急停、安装与上游许可证证据
+- [ ] S07：上游来源已按选择/排除策略闭环；等待左/右硬件、供电、急停与安装现场记录
 - [ ] S08：在双臂禁用条件下完成两路 CAN、两套 Pika 和两臂反馈的只读联通
 - [ ] S09–S11：完成通用分侧驱动、过滤器和双臂安全协调器
 - [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
