@@ -146,6 +146,17 @@ scripts/configure_pika_serial.sh check right
 # S07：按现场清单填写 Git 忽略的硬件记录；校验器不访问设备：
 cp config/s07-hardware.env.example config/s07-hardware.env
 scripts/check_s07_hardware.sh
+
+# S08：只读检查左右 Pika 数据完整性；不会发送串口数据：
+scripts/check_pika_stream.sh left
+scripts/check_pika_stream.sh right
+scripts/check_piper_can_stream.sh left
+scripts/check_piper_can_stream.sh right
+# 构建后可启动本项目独立的双侧 Piper ROS 原始反馈；只接收、不使能：
+source devel/setup.bash
+roslaunch pi05_control s08_readonly_feedback.launch
+# 定位发布者已由现场批准并启动后，只读检查双侧位姿和 accurate 状态：
+scripts/check_pika_localization.sh --duration 10
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
@@ -169,7 +180,8 @@ scripts/check_s07_hardware.sh
 ## 下一步
 
 - [ ] S07：上游来源已按选择/排除策略闭环；等待左/右硬件、供电、急停与安装现场记录
-- [ ] S08：在双臂禁用条件下完成两路 CAN、两套 Pika 和两臂反馈的只读联通
+- [x] S08：双侧 CAN、Pika 串口/定位及 Piper 原始 ROS 反馈已完成只读真机验证；
+  URDF 关节名、安装方向与零点适配留待后续驱动阶段
 - [ ] S09–S11：完成通用分侧驱动、过滤器和双臂安全协调器
 - [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
 

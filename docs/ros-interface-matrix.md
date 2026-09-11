@@ -1,6 +1,6 @@
 # PI05 双臂 ROS 接口矩阵
 
-状态：**目标接口已按双臂纠偏；尚未实现或完成真机验证，不构成运动许可。**
+状态：**S08 双侧 Pika 定位与原始 Piper ROS 反馈已完成真机验证；目标控制接口尚未实现，不构成运动许可。**
 
 ## 命名约定
 
@@ -27,6 +27,7 @@
 | `/joint_states_gripper_{s}` | `sensor_msgs/JointState` | 过滤后目标 | 直接运动命令 |
 | `/teleop_status_{s}` | `data_msgs/TeleopStatus` | 分侧会话状态 | 安全关键状态 |
 | `/arm_control_status_{s}` | `data_msgs/ArmControlStatus` | IK/限位状态 | 安全提示 |
+| `/{side}_arm/joint_states_raw` | `sensor_msgs/JointState` | S08 协议原始反馈：6 关节 rad + 夹爪行程 m | 已真机验证；禁止作控制目标 |
 | `/{side}_arm/joint_states` | `sensor_msgs/JointState` | URDF 兼容反馈 | 只读 |
 | `/{side}_arm/arm_status` | `piper_msgs/PiperStatusMsg` | 驱动/通信/错误状态 | 安全关键反馈 |
 
@@ -54,6 +55,19 @@ bringup 中 remap 到对应侧的 `*_raw` 内部名称，或禁用。ROS graph �
 低速测试上限，不是两侧已经验收的安全值；每侧需单独记录发布频率、限位和夹爪标定。
 
 ## 只读核对
+
+S08 独立只读入口只创建 `/{side}_arm/joint_states_raw`，不创建命令订阅者或服务：
+
+```bash
+source /opt/ros/noetic/setup.bash
+source devel/setup.bash
+roslaunch pi05_control s08_readonly_feedback.launch
+rostopic hz /left_arm/joint_states_raw
+rostopic hz /right_arm/joint_states_raw
+```
+
+该 `raw` 接口已验证协议顺序和单位，但尚未完成 URDF 关节名、安装方向和零点适配。
+以下接口属于后续完整链路核对，不应在 S08 强行启动现有上游驱动：
 
 在两臂禁用且不存在命令发布者时执行：
 
