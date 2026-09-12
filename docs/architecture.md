@@ -20,8 +20,8 @@ Pika Right ─► right teleop ─► right safety filter ─► /right_arm driv
 ## 安全所有权
 
 - 分侧过滤器只允许向本侧驱动内部命令入口发布。
-- S10 分侧过滤器当前发布业务层 `/joint_states_gripper_l|r`，尚未与 S09 的
-  `/{side}_arm/joint_ctrl_raw` 接通；该连接只能由 S11 协调器在无旁路审计后建立。
+- S11 的统一 launch 将 S10 两侧过滤输出闭集映射到对应 S09
+  `/{side}_arm/joint_ctrl_raw`；单独启动 S09/S10 时仍默认断开。
 - 双臂协调器是公开 enable/stop 的唯一入口，并汇总双侧通信、定位、反馈和故障状态。
 - 双手协同会话中，任一侧关键状态失效都撤销整个会话；默认对双侧执行经验证的
   hold/stop/disable 策略，不允许另一侧继续执行缓存轨迹。
@@ -29,6 +29,8 @@ Pika Right ─► right teleop ─► right safety filter ─► /right_arm driv
 - 原始 driver 服务和话题只存在于 `/left_arm/*_raw`、`/right_arm/*_raw` 内部边界。
 - 分侧状态桥把反馈新鲜度、定位、IK、遥操作会话与协调器授权汇总为
   `/{side}_arm/safety_filter_status`；故障锁存后必须撤销授权并满足恢复前置条件。
+- 协调器以周期心跳同时续租两侧授权；自身退出、任一状态超时或左右会话长期不一致都会
+  使租约失效。故障响应顺序固定为撤权、双侧 software stop、双侧 disable。
 
 ## 启停顺序
 

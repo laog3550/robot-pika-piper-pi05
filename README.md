@@ -55,6 +55,7 @@ robot-pika-piper-pi05/
 │   ├── check_environment.sh         # 只读环境检查
 │   ├── check_upstream_manifest.sh   # 固定 commit 与许可证远端校验
 │   ├── check_s07_hardware.sh        # S07 本地硬件记录校验
+│   ├── check_control_graph.py       # S11 只读 ROS 控制图所有权审计
 │   ├── discover_devices.sh          # 脱敏、只读的 CAN/串口发现
 │   ├── configure_can.sh             # CAN check/apply 与 bus-info 绑定
 │   └── configure_pika_serial.sh     # Pika 串口 check/apply 与稳定别名
@@ -90,7 +91,7 @@ Git 不跟踪空目录，因此各预留目录使用说明文件保留。后续�
 
 当前阶段与验证等级见 [`docs/status.md`](docs/status.md)。
 
-## 计划中的双臂控制链路
+## 双臂控制链路
 
 ```text
 Pika Left  ─► left filter  ─► /left_arm driver  ─► left_piper
@@ -110,6 +111,7 @@ Pika Right ─► right filter ─► /right_arm driver ─► right_piper
 - 遥操作触发与定位状态：`/teleop_trigger_l|r`、`/pika_localization_status_l|r`
 - 分侧过滤授权与状态：`/{left|right}_arm/control_authorized`、
   `/{left|right}_arm/safety_filter_status`
+- 双臂汇总状态与复位：`/dual_arm/status`、`/dual_arm/reset_fault`
 
 ## 从 S06 开始的实施阶段
 
@@ -171,12 +173,24 @@ tests/test_safety_filter.sh
 # 只展开安全过滤节点名称，默认实际启动仍为 false：
 roslaunch --nodes src/pi05_control/launch/s10_arm_safety_filter.launch \
   side:=left start_filter:=true
+
+# S11：执行无硬件协调器、统一 launch 和控制图测试：
+tests/test_dual_arm_safety.sh
+tests/test_control_graph_checker.sh
+# 只展开硬件模式的节点名称，不启动任何节点或访问 CAN：
+roslaunch --nodes src/pi05_control/launch/s11_dual_arm_bringup.launch \
+  mode:=hardware
+# 实际 simulation 只启动双侧过滤器和协调器，不启动驱动：
+roslaunch pi05_control s11_dual_arm_bringup.launch mode:=simulation
+# 在另一个已 source 当前工作区的终端执行只读图审计：
+scripts/check_control_graph.py --mode simulation
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
 和回滚见 [`docs/device-configuration.md`](docs/device-configuration.md)。S09 launch 默认
 不启动驱动；显式启动仍会发送 CAN 模式帧。S10 过滤器也默认不启动，且尚未连接驱动，
-**不要在此阶段直接用于机械臂上电运动**。
+**不要在此阶段直接用于机械臂上电运动**。S11 `mode:=hardware` 会启动两侧 Piper 驱动，
+必须等待 S12 现场分侧低速验收；当前只允许 `--nodes` 展开检查或运行 `mode:=simulation`。
 
 ## 真机部署安全原则
 
@@ -199,7 +213,7 @@ roslaunch --nodes src/pi05_control/launch/s10_arm_safety_filter.launch \
   URDF 关节名、安装方向与零点适配留待后续驱动阶段
 - [ ] S09：通用分侧驱动封装已完成构建验证，等待后续阶段的受控真机验收
 - [ ] S10：通用安全过滤与状态桥已完成回放验证，等待受控真机验收
-- [ ] S11：实现双臂安全协调器、唯一控制所有者和跨侧故障策略
+- [ ] S11：双臂安全协调器、唯一控制所有者和跨侧故障回放已完成，等待真机验收
 - [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
 
 ## 许可证

@@ -1,0 +1,7 @@
+# Shared S11 coordinator timing. These values are replay baselines and require
+# separate low-speed validation before hardware actions are enabled.
+status_timeout_s: 0.35
+authorization_ack_timeout_s: 0.50
+session_sync_timeout_s: 0.20
+authorization_heartbeat_hz: 20.0
+service_timeout_s: 1.0

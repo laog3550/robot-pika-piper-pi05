@@ -19,7 +19,9 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
     def test_side_is_required_and_mappings_are_closed(self):
         self.assertNotIn("default", self.args["side"])
         self.assertEqual(self.args["start_driver"].get("default"), "false")
-        self.assertEqual(set(self.args), {"side", "start_driver"})
+        self.assertEqual(
+            set(self.args), {"side", "start_driver", "publish_business_feedback"})
+        self.assertEqual(self.args["publish_business_feedback"].get("default"), "false")
         namespace = self.group.attrib["ns"]
         self.assertIn("{'left': 'left_arm', 'right': 'right_arm'}", namespace)
         self.assertIn("[arg('side')]", namespace)
@@ -43,7 +45,7 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
                 "joint_ctrl_single": "joint_ctrl_raw",
                 "pos_cmd": "pos_cmd_raw",
                 "enable_flag": "enable_flag_raw",
-                "joint_states_single": "joint_states_driver_raw",
+                "joint_states_single": self.node.findall("remap")[3].attrib["to"],
                 "arm_status": "arm_status",
                 "end_pose_euler": "end_pose_euler_raw",
                 "end_pose": "end_pose_raw",
@@ -57,7 +59,12 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
         )
         for source, target in remaps.items():
             self.assertFalse(source.startswith("/"), source)
-            self.assertFalse(target.startswith("/"), target)
+            if source != "joint_states_single":
+                self.assertFalse(target.startswith("/"), target)
+        feedback_target = remaps["joint_states_single"]
+        self.assertIn("/joint_states_single_l", feedback_target)
+        self.assertIn("/joint_states_single_r", feedback_target)
+        self.assertIn("publish_business_feedback", feedback_target)
 
 
 if __name__ == "__main__":

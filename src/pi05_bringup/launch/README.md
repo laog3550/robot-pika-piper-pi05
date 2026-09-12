@@ -13,3 +13,6 @@
 
 S10 的单侧安全过滤入口位于 `pi05_control/launch/s10_arm_safety_filter.launch`。它默认
 `start_filter=false`，左右实例从本包同一份 `config/arm_filter.yaml` 加载参数。
+
+S11 统一入口为 `pi05_control/launch/s11_dual_arm_bringup.launch`，仅接受 `off`、
+`simulation`、`hardware` 三种闭集模式。默认 `off`；`hardware` 在 S12 前不得用于真机。

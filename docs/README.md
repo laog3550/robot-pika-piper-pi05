@@ -14,6 +14,7 @@
 - [S08 双侧只读通信](s08-readonly-communication.md)：CAN/Pika 被动检查、双侧定位与 Piper ROS 原始反馈验收
 - [S09 通用单臂驱动封装](s09-single-arm-driver-wrapper.md)：左右闭集选择、原始接口命名空间隔离与安全启动边界
 - [S10 通用安全过滤与状态桥](s10-safety-filter-status-bridge.md)：左右复用状态机、输入门禁、故障锁存与离线回放
+- [S11 双臂协调安全](s11-dual-arm-safety.md)：统一 bringup、授权租约、跨侧故障响应和控制图审计
 
 后续文档将按真机部署顺序维护：
 

@@ -2,6 +2,7 @@
   <!-- Required closed-set selector. The node is opt-in because its output is a motion target. -->
   <arg name="side"/>
   <arg name="start_filter" default="false"/>
+  <arg name="connect_driver" default="false"/>
 
   <group ns="$(eval {'left': 'left_arm', 'right': 'right_arm'}[arg('side')])">
     <node if="$(arg start_filter)"
@@ -12,6 +13,8 @@
           required="true">
       <param name="side" value="$(arg side)"/>
       <rosparam command="load" file="$(find pi05_bringup)/config/arm_filter.yaml"/>
+      <remap from="$(eval {'left': '/joint_states_gripper_l', 'right': '/joint_states_gripper_r'}[arg('side')])"
+             to="$(eval {'left': '/left_arm/joint_ctrl_raw', 'right': '/right_arm/joint_ctrl_raw'}[arg('side')] if arg('connect_driver') else {'left': '/joint_states_gripper_l', 'right': '/joint_states_gripper_r'}[arg('side')])"/>
     </node>
   </group>
 </launch>

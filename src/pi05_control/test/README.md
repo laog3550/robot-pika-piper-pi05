@@ -19,3 +19,6 @@
 - `test_safety_filter.py`：S10 左右一致回放、全部会话门禁、死区/低通/步长、异常输入、
   定位/反馈/命令超时、时间倒退、故障锁存和旧目标清除。
 - `test_safety_filter_launch.py`：S10 闭集 side、默认不启动、共享配置及无原始驱动旁路。
+- `test_dual_arm_safety.py`：S11 双侧前置条件、状态超时、会话同步、故障传播和恢复。
+- `test_dual_arm_bringup_launch.py`：S11 `off|simulation|hardware` 闭集、双侧实例和连接。
+- `test_control_graph.py`：S11 命令/授权唯一发布者、服务所有者和遗留全局入口拒绝。

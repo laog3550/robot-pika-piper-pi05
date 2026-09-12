@@ -1,6 +1,6 @@
 # PI05 双臂 ROS 接口矩阵
 
-状态：**S10 已实现双侧通用安全过滤与状态桥并完成离线回放；控制输出尚未真机验收，不构成运动许可。**
+状态：**S11 已完成双臂协调、授权租约和无硬件故障回放；hardware 模式尚未真机验收，不构成运动许可。**
 
 ## 命名约定
 
@@ -24,10 +24,10 @@
 | `/joint_states_single_{s}` | `sensor_msgs/JointState` | Piper 真实反馈 | 安全关键反馈 |
 | `/piper_IK_{s}/ctrl_end_pose` | `geometry_msgs/PoseStamped` | IK 目标 | 运动中间量 |
 | `/joint_states_gripper_raw_{s}` | `sensor_msgs/JointState` | 未整形目标 | 禁止接驱动 |
-| `/joint_states_gripper_{s}` | `sensor_msgs/JointState` | 过滤后目标 | 直接运动命令 |
+| `/joint_states_gripper_{s}` | `sensor_msgs/JointState` | 单独启动 S10 时的过滤后目标 | S11 中闭集 remap 到本侧 `joint_ctrl_raw` |
 | `/teleop_status_{s}` | `data_msgs/TeleopStatus` | 分侧会话状态 | 安全关键状态 |
 | `/arm_control_status_{s}` | `data_msgs/ArmControlStatus` | IK/限位状态 | 安全提示 |
-| `/{side}_arm/control_authorized` | `std_msgs/Bool` | S11 协调器给予的分侧运行授权 | 安全关键输入；默认无发布者 |
+| `/{side}_arm/control_authorized` | `std_msgs/Bool` | S11 协调器给予的分侧授权心跳 | 安全关键输入；超时锁存 |
 | `/{side}_arm/safety_filter_status` | `diagnostic_msgs/DiagnosticStatus` | 汇总过滤器状态和故障原因 | 只读、锁存发布 |
 | `/{side}_arm/joint_states_raw` | `sensor_msgs/JointState` | S08 协议原始反馈：6 关节 rad + 夹爪行程 m | 已真机验证；禁止作控制目标 |
 | `/{side}_arm/joint_states_driver_raw` | `sensor_msgs/JointState` | S09 官方驱动原始反馈 | 仅构建验证；尚未做 URDF 适配 |
@@ -42,8 +42,9 @@
 | 接口 | 所有者 | 约定 |
 |---|---|---|
 | `/dual_arm/enable_srv` | 双臂安全协调器 | 唯一公开使能入口；仅在双侧前置条件通过时转发 |
-| `/dual_arm/stop_srv` | 双臂安全协调器 | 同时请求两侧已验证的软件停止；不等同硬件急停 |
-| `/dual_arm/status` | 双臂安全协调器 | 汇总双侧状态、故障锁存与会话状态 |
+| `/dual_arm/stop_srv` | 双臂安全协调器 | 同时请求两侧软件停止；真机效果待 S12 验证，不等同硬件急停 |
+| `/dual_arm/status` | 双臂安全协调器 | `diagnostic_msgs/DiagnosticStatus`；汇总双侧状态、故障锁存与最近动作 |
+| `/dual_arm/reset_fault` | 双臂安全协调器 | 撤销双侧授权且两侧状态新鲜、无故障时才允许清除锁存 |
 | `/teleop_trigger_{s}` | 分侧遥操作节点 | 切换语义，协调器不得据响应猜测实际状态 |
 | `/{side}_arm/enable_srv_raw` | 对应 Piper driver | 内部入口；禁止作为运维 API |
 | `/{side}_arm/stop_srv_raw` | 对应 Piper driver | 内部入口；行为需分侧真机验证 |
@@ -60,6 +61,7 @@ bringup 中 remap 到对应侧的 `*_raw` 内部名称，或禁用。ROS graph �
 
 左右两侧从同一 `arm_filter.yaml` 载入独立参数实例：`speed_percent=15.0`、
 `command_timeout_s=0.35`、`feedback_timeout_s=0.35`、`localization_timeout_s=0.35`、
+`authorization_timeout_s=0.25`、
 `double_gripper_return=false`。驱动另行固定 `auto_enable=false`。数值仅是首次
 低速测试上限，不是两侧已经验收的安全值；每侧需单独记录发布频率、限位和夹爪标定。
 
@@ -105,3 +107,14 @@ S10 的 `s10_arm_safety_filter.launch` 同样要求闭集 `side`，且 `start_fi
 协调器授权和新遥操作会话同时成立时才发布过滤后目标。任何超时、时间倒退或异常数值会
 撤销会话并锁存故障。ROS 1 话题不是访问控制，`control_authorized` 的唯一发布者约束须由
 S11 的完整 launch 和 ROS graph 审计实现。
+
+S11 使用 `s11_dual_arm_bringup.launch` 的单一 `mode` 闭集：`off`（默认、无节点）、
+`simulation`（双过滤器和协调器，禁止原始硬件服务调用）或 `hardware`（双驱动、双过滤器、
+协调器一起启动）。不能单独选择一侧。S11 将两侧过滤输出分别连接到本侧
+`joint_ctrl_raw`，并将驱动反馈连接到本侧业务反馈；协调器是两路授权的唯一发布者。
+
+协调器只有在两侧过滤器、反馈、定位、IK 与驱动状态均新鲜正常时才转发双侧 enable。
+任一侧关键故障先同步发布双侧 `control_authorized=false`，随后依次请求双侧 software
+stop 和双侧 disable。部分 enable 也执行同样回滚。授权以 20 Hz 心跳续租；协调器退出
+后，各过滤器最迟在 `authorization_timeout_s` 到期时锁存并停止输出。上述 stop/disable
+仍需 S12 分侧真机验证，不能等同硬件急停。

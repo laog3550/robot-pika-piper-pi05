@@ -20,9 +20,10 @@ class SafetyFilterLaunchTest(unittest.TestCase):
         cls.source = NODE_PATH.read_text(encoding="utf-8")
 
     def test_side_is_required_and_start_is_opt_in(self):
-        self.assertEqual(set(self.args), {"side", "start_filter"})
+        self.assertEqual(set(self.args), {"side", "start_filter", "connect_driver"})
         self.assertNotIn("default", self.args["side"])
         self.assertEqual(self.args["start_filter"].get("default"), "false")
+        self.assertEqual(self.args["connect_driver"].get("default"), "false")
         self.assertIn("{'left': 'left_arm', 'right': 'right_arm'}", self.group.attrib["ns"])
         self.assertEqual(self.node.attrib.get("if"), "$(arg start_filter)")
         self.assertEqual(self.node.attrib.get("type"), "arm_safety_filter_node.py")
@@ -33,6 +34,12 @@ class SafetyFilterLaunchTest(unittest.TestCase):
         rosparam = self.node.find("rosparam")
         self.assertIn("pi05_bringup", rosparam.attrib["file"])
         self.assertTrue(rosparam.attrib["file"].endswith("/config/arm_filter.yaml"))
+        remap = self.node.find("remap")
+        self.assertIn("/joint_states_gripper_l", remap.attrib["from"])
+        self.assertIn("/joint_states_gripper_r", remap.attrib["from"])
+        self.assertIn("/left_arm/joint_ctrl_raw", remap.attrib["to"])
+        self.assertIn("/right_arm/joint_ctrl_raw", remap.attrib["to"])
+        self.assertIn("connect_driver", remap.attrib["to"])
 
     def test_no_driver_service_or_raw_driver_publisher(self):
         forbidden = (

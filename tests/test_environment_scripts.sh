@@ -50,8 +50,8 @@ grep -q '^robotpkg-py38-eigenpy=3.10.0$' "$repo_root/config/apt-packages-noetic.
 grep -q '^robotpkg-py38-hpp-fcl=2.4.5$' "$repo_root/config/apt-packages-noetic.txt"
 grep -q -- '--system-site-packages' "$repo_root/scripts/install_python_deps.sh"
 grep -q 'pi05-system-packages.pth' "$repo_root/scripts/install_python_deps.sh"
-grep -q -- '--skip-keys data_msgs' "$repo_root/scripts/build_catkin.sh"
-grep -q -- '--skip-keys data_msgs' "$repo_root/scripts/setup_rosdep.sh"
+grep -q -- 'data_msgs piper_msgs' "$repo_root/scripts/build_catkin.sh"
+grep -q -- 'data_msgs piper_msgs' "$repo_root/scripts/setup_rosdep.sh"
 
 for guarded_script in bootstrap_ubuntu.sh setup_rosdep.sh; do
   if PATH="$fake_dir:$PATH" "$repo_root/scripts/$guarded_script" --apply </dev/null >/dev/null 2>&1; then

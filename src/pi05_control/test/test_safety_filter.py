@@ -33,6 +33,7 @@ class FilterConfigTest(unittest.TestCase):
             {"gripper_alpha": 1.01},
             {"max_arm_step_rad": 0.0},
             {"command_timeout_s": math.inf},
+            {"authorization_timeout_s": 0.0},
             {"speed_percent": 101.0},
         )
         for values in invalid:
@@ -107,11 +108,13 @@ class ArmSafetyFilterTest(unittest.TestCase):
         command_timeout = make_ready("right", 2.0)
         command_timeout.update_feedback(ZERO, NAMES, 2.36)
         command_timeout.update_localization(True, 2.36)
+        command_timeout.set_authorized(True, 2.36)
         self.assertFalse(command_timeout.watchdog(2.36))
         self.assertEqual(command_timeout.fault_reason, "command timed out")
 
         feedback_timeout = make_ready("right", 3.0)
         feedback_timeout.update_localization(True, 3.36)
+        feedback_timeout.set_authorized(True, 3.36)
         self.assertFalse(feedback_timeout.watchdog(3.36))
         self.assertEqual(feedback_timeout.fault_reason, "feedback timed out")
 
@@ -132,6 +135,23 @@ class ArmSafetyFilterTest(unittest.TestCase):
         waiting.update_arm_status(False, 1.0)
         self.assertFalse(waiting.update_teleop_status(True, False, 1.0))
         self.assertFalse(waiting.fault_reason)
+
+    def test_authorization_heartbeat_is_a_lease(self):
+        item = make_ready()
+        item.update_feedback(ZERO, NAMES, 1.2)
+        item.update_localization(True, 1.2)
+        self.assertTrue(item.set_authorized(True, 1.2))
+        self.assertTrue(item.session_active)
+        self.assertTrue(item.set_authorized(True, 1.3))
+        self.assertTrue(item.session_active)
+        item.update_feedback(ZERO, NAMES, 1.54)
+        item.update_localization(True, 1.54)
+        self.assertIsNotNone(item.command(ZERO, NAMES, 1.54))
+        self.assertTrue(item.watchdog(1.54))
+        item.update_feedback(ZERO, NAMES, 1.56)
+        item.update_localization(True, 1.56)
+        self.assertFalse(item.watchdog(1.56))
+        self.assertEqual(item.fault_reason, "authorization heartbeat timed out")
 
     def test_left_and_right_replay_are_identical(self):
         outputs = []
