@@ -27,7 +27,7 @@
 | Pika 到 Piper 遥操作 | `pika_remote_piper` |
 | 右侧参考传感器启动 | `open_right_pika_sensor.launch`（仅作迁移参考） |
 | 右侧参考遥操作编排 | `teleop_right_piper.launch`（需参数化为双侧） |
-| 参考安全指令整形 | `right_arm_command_filter.py`（需改为通用节点） |
+| 参考安全指令整形 | `right_arm_command_filter.py`（S10 已独立重构为通用节点） |
 | 参考关节名桥接 | `right_arm_joint_state_bridge.py`（需改为通用节点） |
 
 当前参考环境为 x86_64、Ubuntu 20.04、ROS Noetic；Python 节点使用 Python 3。正式部署前仍需根据 PI05 工控机、CAN 适配器 USB 地址、Pika 串口和机械臂安装方向校准参数。
@@ -108,6 +108,8 @@ Pika Right ─► right filter ─► /right_arm driver ─► right_piper
 - 驱动命名空间：`/left_arm/*_raw`、`/right_arm/*_raw`
 - 唯一公开使能/停止：`/dual_arm/enable_srv`、`/dual_arm/stop_srv`
 - 遥操作触发与定位状态：`/teleop_trigger_l|r`、`/pika_localization_status_l|r`
+- 分侧过滤授权与状态：`/{left|right}_arm/control_authorized`、
+  `/{left|right}_arm/safety_filter_status`
 
 ## 从 S06 开始的实施阶段
 
@@ -163,12 +165,18 @@ roslaunch --nodes src/pi05_control/launch/s09_single_arm_driver.launch \
   side:=left start_driver:=true
 roslaunch --nodes src/pi05_control/launch/s09_single_arm_driver.launch \
   side:=right start_driver:=true
+
+# S10：执行无硬件的左右安全过滤回放；不会启动驱动或发布真机命令：
+tests/test_safety_filter.sh
+# 只展开安全过滤节点名称，默认实际启动仍为 false：
+roslaunch --nodes src/pi05_control/launch/s10_arm_safety_filter.launch \
+  side:=left start_filter:=true
 ```
 
 环境步骤见 [`docs/environment-setup.md`](docs/environment-setup.md)，设备身份确认、apply
 和回滚见 [`docs/device-configuration.md`](docs/device-configuration.md)。S09 launch 默认
-不启动驱动；显式启动仍会发送 CAN 模式帧，控制脚本也尚未迁移，**不要在此阶段直接
-用于机械臂上电运动**。
+不启动驱动；显式启动仍会发送 CAN 模式帧。S10 过滤器也默认不启动，且尚未连接驱动，
+**不要在此阶段直接用于机械臂上电运动**。
 
 ## 真机部署安全原则
 
@@ -190,7 +198,8 @@ roslaunch --nodes src/pi05_control/launch/s09_single_arm_driver.launch \
 - [x] S08：双侧 CAN、Pika 串口/定位及 Piper 原始 ROS 反馈已完成只读真机验证；
   URDF 关节名、安装方向与零点适配留待后续驱动阶段
 - [ ] S09：通用分侧驱动封装已完成构建验证，等待后续阶段的受控真机验收
-- [ ] S10–S11：完成通用安全过滤器和双臂安全协调器
+- [ ] S10：通用安全过滤与状态桥已完成回放验证，等待受控真机验收
+- [ ] S11：实现双臂安全协调器、唯一控制所有者和跨侧故障策略
 - [ ] S12–S16：依次完成分侧低速、双臂协同、双手遥操作、故障注入与交付固化
 
 ## 许可证

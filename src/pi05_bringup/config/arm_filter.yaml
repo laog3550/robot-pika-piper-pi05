@@ -10,6 +10,8 @@ max_gripper_step_m: 0.0006
 
 speed_percent: 15.0
 command_timeout_s: 0.35
+feedback_timeout_s: 0.35
+localization_timeout_s: 0.35
 
 # Automatic return is a motion function and remains disabled until separately
 # risk-assessed and validated for both arms.

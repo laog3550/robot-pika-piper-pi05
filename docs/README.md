@@ -13,6 +13,7 @@
 - [S07 双侧硬件现场验收](s07-field-acceptance.md)：无运动的型号、固件、供电、终端、急停与安装复核
 - [S08 双侧只读通信](s08-readonly-communication.md)：CAN/Pika 被动检查、双侧定位与 Piper ROS 原始反馈验收
 - [S09 通用单臂驱动封装](s09-single-arm-driver-wrapper.md)：左右闭集选择、原始接口命名空间隔离与安全启动边界
+- [S10 通用安全过滤与状态桥](s10-safety-filter-status-bridge.md)：左右复用状态机、输入门禁、故障锁存与离线回放
 
 后续文档将按真机部署顺序维护：
 

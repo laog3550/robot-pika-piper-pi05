@@ -16,3 +16,6 @@
 
 - `test_piper_feedback.py`：S08 Piper 原始反馈端序、单位和完整帧组。
 - `test_single_arm_driver_launch.py`：S09 必填 side、安全默认值及全部驱动接口分侧 remap。
+- `test_safety_filter.py`：S10 左右一致回放、全部会话门禁、死区/低通/步长、异常输入、
+  定位/反馈/命令超时、时间倒退、故障锁存和旧目标清除。
+- `test_safety_filter_launch.py`：S10 闭集 side、默认不启动、共享配置及无原始驱动旁路。

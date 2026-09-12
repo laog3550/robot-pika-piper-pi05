@@ -8,7 +8,8 @@
 S09 不复制上游 Piper 控制脚本；`launch/s09_single_arm_driver.launch` 仅封装外部 `piper`
 包，并将其所有命令、反馈和服务放入选择侧的内部命名空间。
 
-- `arm_command_filter.py`：通过私有参数和 remap 为左右臂分别提供过滤、限速、看门狗和安全会话状态
+- `arm_safety_filter_node.py`：S10 通过必填 `side` 为左右臂复用同一过滤、限速、看门狗、
+  故障锁存和状态桥；不调用驱动服务，不发布原始驱动入口
 - `arm_joint_state_bridge.py`：将指定侧 Piper 反馈关节名适配到对应 URDF，仅用于状态/可视化
 - `dual_arm_safety_coordinator.py`：汇总双侧状态并拥有公开 enable/stop 接口
 
