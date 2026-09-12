@@ -10,6 +10,8 @@ S10 提供一个由 `side:=left|right` 选择的通用节点。它只在全部�
 `FAULT_LATCHED`，发布到 `/{side}_arm/safety_filter_status`。进入 `TELEOP_ACTIVE` 必须依次
 取得新鲜且有限的七轴真实反馈、有效定位、IK 未越界、`control_authorized=true` 和新的
 `TeleopStatus(fail=false, quit=false)`。授权与会话顺序不可交换，旧目标不能恢复。
+授权是由协调器周期续期的租约；超过 `authorization_timeout_s` 未收到心跳会锁存故障，
+避免协调器退出后继续接受命令。
 
 下列情况拒绝输出并锁存故障：
 

@@ -9,10 +9,12 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>diagnostic_msgs</depend>
   <depend>rospy</depend>
+  <exec_depend>rosgraph</exec_depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <exec_depend>data_msgs</exec_depend>
+  <exec_depend>piper_msgs</exec_depend>
 
   <export/>
 </package>

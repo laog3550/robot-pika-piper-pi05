@@ -18,6 +18,7 @@ class FilterConfig(object):
         command_timeout_s=0.35,
         feedback_timeout_s=0.35,
         localization_timeout_s=0.35,
+        authorization_timeout_s=0.25,
     ):
         self.arm_alpha = float(arm_alpha)
         self.arm_deadband_rad = float(arm_deadband_rad)
@@ -29,6 +30,7 @@ class FilterConfig(object):
         self.command_timeout_s = float(command_timeout_s)
         self.feedback_timeout_s = float(feedback_timeout_s)
         self.localization_timeout_s = float(localization_timeout_s)
+        self.authorization_timeout_s = float(authorization_timeout_s)
         self.validate()
 
     def validate(self):
@@ -49,6 +51,7 @@ class FilterConfig(object):
             "command_timeout_s",
             "feedback_timeout_s",
             "localization_timeout_s",
+            "authorization_timeout_s",
         ):
             value = getattr(self, name)
             if not math.isfinite(value) or value <= 0.0:
@@ -88,6 +91,7 @@ class ArmSafetyFilter(object):
         self.last_feedback_time = None
         self.last_localization_time = None
         self.last_command_time = None
+        self.last_authorization_time = None
         self.last_time = None
         self.filtered = None
 
@@ -182,8 +186,11 @@ class ArmSafetyFilter(object):
             return False
         requested = bool(authorized)
         if requested == self.authorized:
+            if requested and not self.fault_reason:
+                self.last_authorization_time = float(now)
             return not requested or not self.fault_reason
         self.authorized = False
+        self.last_authorization_time = None
         self.session_active = False
         self.last_command_time = None
         self.filtered = list(self.feedback) if self.feedback is not None else None
@@ -202,6 +209,7 @@ class ArmSafetyFilter(object):
             self._latch("authorization rejected: IK status unavailable")
             return False
         self.authorized = True
+        self.last_authorization_time = now
         return True
 
     def update_teleop_status(self, fail, quit_session, now):
@@ -289,6 +297,13 @@ class ArmSafetyFilter(object):
         if not self._observe_time(now):
             return False
         now = float(now)
+        if (
+            self.authorized
+            and self.last_authorization_time is not None
+            and now - self.last_authorization_time > self.config.authorization_timeout_s
+        ):
+            self._latch("authorization heartbeat timed out")
+            return False
         if self.authorized and not self._feedback_fresh(now):
             self._latch("feedback timed out")
             return False

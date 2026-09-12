@@ -21,6 +21,8 @@
   观察到控制/配置 ID 的窗口；不发送帧、不显示或保存 payload
 - `check_pika_localization.sh`：S08 订阅既有左右 Pika 位姿/有效状态，只报告汇总频率和
   有效样本数；不启动定位节点、不显示坐标或设备标识
+- `check_control_graph.py --mode simulation|hardware`：S11 只读审计命令、授权和服务所有者，
+  拒绝跨侧、多发布者及无侧别遗留控制接口
 
 以下真机运维入口仍为后续阶段预留：
 

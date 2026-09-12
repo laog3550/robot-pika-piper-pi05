@@ -52,3 +52,5 @@
   `auto_enable=false` 和全部驱动接口相对命名/分侧隔离契约测试；不启动驱动节点。
 - `test_safety_filter.sh`：S10 通用过滤状态机的左右离线回放、故障注入及 launch 安全边界；
   不启动 Piper 驱动，不连接真机命令入口。
+- `test_dual_arm_safety.sh`：S11 双侧协调状态机、闭集 bringup 及撤权→stop→disable 顺序契约。
+- `test_control_graph_checker.sh`：S11 只读 ROS 图所有权规则和旁路拒绝；测试不连接真机。

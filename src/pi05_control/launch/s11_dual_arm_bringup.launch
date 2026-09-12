@@ -1,0 +1,46 @@
+<launch>
+  <!--
+    Closed operating modes prevent partial or cross-side startup:
+      off        no nodes
+      simulation filters + coordinator, no driver and no raw service calls
+      hardware   both drivers + both filters + coordinator; explicit only
+  -->
+  <arg name="mode" default="off"/>
+
+  <include file="$(find pi05_control)/launch/s09_single_arm_driver.launch">
+    <arg name="side" value="left"/>
+    <arg name="start_driver"
+         value="$(eval {'off': 'false', 'simulation': 'false', 'hardware': 'true'}[arg('mode')])"/>
+    <arg name="publish_business_feedback" value="true"/>
+  </include>
+  <include file="$(find pi05_control)/launch/s09_single_arm_driver.launch">
+    <arg name="side" value="right"/>
+    <arg name="start_driver"
+         value="$(eval {'off': 'false', 'simulation': 'false', 'hardware': 'true'}[arg('mode')])"/>
+    <arg name="publish_business_feedback" value="true"/>
+  </include>
+
+  <include file="$(find pi05_control)/launch/s10_arm_safety_filter.launch">
+    <arg name="side" value="left"/>
+    <arg name="start_filter"
+         value="$(eval {'off': 'false', 'simulation': 'true', 'hardware': 'true'}[arg('mode')])"/>
+    <arg name="connect_driver" value="true"/>
+  </include>
+  <include file="$(find pi05_control)/launch/s10_arm_safety_filter.launch">
+    <arg name="side" value="right"/>
+    <arg name="start_filter"
+         value="$(eval {'off': 'false', 'simulation': 'true', 'hardware': 'true'}[arg('mode')])"/>
+    <arg name="connect_driver" value="true"/>
+  </include>
+
+  <node if="$(eval {'off': 'false', 'simulation': 'true', 'hardware': 'true'}[arg('mode')])"
+        pkg="pi05_control"
+        type="dual_arm_safety_coordinator_node.py"
+        name="dual_arm_safety_coordinator"
+        output="screen"
+        required="true">
+    <param name="hardware_actions_enabled"
+           value="$(eval {'off': 'false', 'simulation': 'false', 'hardware': 'true'}[arg('mode')])"/>
+    <rosparam command="load" file="$(find pi05_bringup)/config/dual_arm_safety.yaml"/>
+  </node>
+</launch>

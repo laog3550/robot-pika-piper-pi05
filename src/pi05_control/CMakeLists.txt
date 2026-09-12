@@ -17,6 +17,7 @@ catkin_package(
 
 catkin_install_python(PROGRAMS
   scripts/arm_safety_filter_node.py
+  scripts/dual_arm_safety_coordinator_node.py
   scripts/piper_readonly_feedback_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
@@ -28,6 +29,9 @@ install(DIRECTORY launch
 if(CATKIN_ENABLE_TESTING)
   catkin_add_nosetests(test/test_safety_filter.py)
   catkin_add_nosetests(test/test_safety_filter_launch.py)
+  catkin_add_nosetests(test/test_dual_arm_safety.py)
+  catkin_add_nosetests(test/test_dual_arm_bringup_launch.py)
+  catkin_add_nosetests(test/test_control_graph.py)
   catkin_add_nosetests(test/test_piper_feedback.py)
   catkin_add_nosetests(test/test_single_arm_driver_launch.py)
 endif()

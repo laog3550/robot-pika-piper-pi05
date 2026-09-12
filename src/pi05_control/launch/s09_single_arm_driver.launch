@@ -2,6 +2,7 @@
   <!-- Required: invalid or omitted sides fail during substitution. -->
   <arg name="side"/>
   <arg name="start_driver" default="false"/>
+  <arg name="publish_business_feedback" default="false"/>
 
   <!--
     The approved upstream piper_ros@ac41fcbc node transmits MotionCtrl_2 during
@@ -25,7 +26,8 @@
       <remap from="pos_cmd" to="pos_cmd_raw"/>
       <remap from="enable_flag" to="enable_flag_raw"/>
 
-      <remap from="joint_states_single" to="joint_states_driver_raw"/>
+      <remap from="joint_states_single"
+             to="$(eval {'left': '/joint_states_single_l', 'right': '/joint_states_single_r'}[arg('side')] if arg('publish_business_feedback') else 'joint_states_driver_raw')"/>
       <remap from="arm_status" to="arm_status"/>
       <remap from="end_pose_euler" to="end_pose_euler_raw"/>
       <remap from="end_pose" to="end_pose_raw"/>

@@ -35,6 +35,7 @@ class ArmSafetyFilterNode(object):
             command_timeout_s=rospy.get_param("~command_timeout_s", 0.35),
             feedback_timeout_s=rospy.get_param("~feedback_timeout_s", 0.35),
             localization_timeout_s=rospy.get_param("~localization_timeout_s", 0.35),
+            authorization_timeout_s=rospy.get_param("~authorization_timeout_s", 0.25),
         ))
 
         suffix = self.short_side
