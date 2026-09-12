@@ -81,6 +81,9 @@ scripts/setup_rosdep.sh --apply
 脚本只在 `/etc/ros/rosdep/sources.list.d/20-default.list` 缺失时执行一次
 `sudo rosdep init`，随后运行 Noetic 索引更新。真正安装前先打印 `rosdep --simulate`
 结果。上游 package.xml 存在漏报，rosdep 不能替代 Python 固定清单和 S03 依赖矩阵。
+项目的 `data_msgs` 是 VCS 清单固定的源码依赖，不是 rosdep/apt 键；脚本只对该键使用
+`--skip-keys`，避免 rosdep 把源码依赖误报为未知系统包。这不会安装或豁免 `data_msgs`，
+运行依赖它的节点前仍必须从固定 commit 构建对应 overlay。
 
 ## 构建与检查
 
@@ -89,7 +92,8 @@ scripts/build_catkin.sh
 scripts/check_environment.sh
 ```
 
-`build_catkin.sh` 先执行只读 `rosdep check`，再用 `.venv/bin/python` 增量运行
+`build_catkin.sh` 先执行只读 `rosdep check`（仅跳过上述固定 VCS 键），再用
+`.venv/bin/python` 增量运行
 `catkin_make`；不会清理已有 build/devel/install。需要 install space 时使用：
 
 ```bash

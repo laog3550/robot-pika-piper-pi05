@@ -1,6 +1,6 @@
 # PI05 双臂 ROS 接口矩阵
 
-状态：**S08 双侧 Pika 定位与原始 Piper ROS 反馈已完成真机验证；目标控制接口尚未实现，不构成运动许可。**
+状态：**S10 已实现双侧通用安全过滤与状态桥并完成离线回放；控制输出尚未真机验收，不构成运动许可。**
 
 ## 命名约定
 
@@ -27,6 +27,8 @@
 | `/joint_states_gripper_{s}` | `sensor_msgs/JointState` | 过滤后目标 | 直接运动命令 |
 | `/teleop_status_{s}` | `data_msgs/TeleopStatus` | 分侧会话状态 | 安全关键状态 |
 | `/arm_control_status_{s}` | `data_msgs/ArmControlStatus` | IK/限位状态 | 安全提示 |
+| `/{side}_arm/control_authorized` | `std_msgs/Bool` | S11 协调器给予的分侧运行授权 | 安全关键输入；默认无发布者 |
+| `/{side}_arm/safety_filter_status` | `diagnostic_msgs/DiagnosticStatus` | 汇总过滤器状态和故障原因 | 只读、锁存发布 |
 | `/{side}_arm/joint_states_raw` | `sensor_msgs/JointState` | S08 协议原始反馈：6 关节 rad + 夹爪行程 m | 已真机验证；禁止作控制目标 |
 | `/{side}_arm/joint_states_driver_raw` | `sensor_msgs/JointState` | S09 官方驱动原始反馈 | 仅构建验证；尚未做 URDF 适配 |
 | `/{side}_arm/joint_ctrl_raw` | `sensor_msgs/JointState` | S09 官方驱动关节命令 | 内部运动入口；禁止直接发布 |
@@ -48,6 +50,7 @@
 | `/{side}_arm/gripper_srv_raw` | 对应 Piper driver | 可直接动作，必须隔离 |
 | `/{side}_arm/reset_srv_raw`、`go_zero_srv_raw` | 对应 Piper driver | 默认不公开、不自动启动 |
 | `/{side}_arm/block_arm_raw` | 对应 Piper driver | 内部命令阻断开关；行为尚未真机验证 |
+| `/{side}_arm/reset_filter_fault` | 分侧安全过滤器 | 仅在撤销授权且反馈、定位、IK 状态均新鲜有效时清除锁存 |
 
 驱动原有 `/enable_flag`、`/pos_cmd`、`/gripper_srv`、`/go_zero_srv` 等全局入口必须在
 bringup 中 remap 到对应侧的 `*_raw` 内部名称，或禁用。ROS graph 审计发现全局运动入口、
@@ -55,8 +58,9 @@ bringup 中 remap 到对应侧的 `*_raw` 内部名称，或禁用。ROS graph �
 
 ## 参数基线
 
-左右两侧从同一 `arm_filter.yaml` 载入独立参数实例：`auto_enable=false`、
-`speed_percent=15.0`、`command_timeout_s=0.35`、`double_gripper_return=false`。数值仅是首次
+左右两侧从同一 `arm_filter.yaml` 载入独立参数实例：`speed_percent=15.0`、
+`command_timeout_s=0.35`、`feedback_timeout_s=0.35`、`localization_timeout_s=0.35`、
+`double_gripper_return=false`。驱动另行固定 `auto_enable=false`。数值仅是首次
 低速测试上限，不是两侧已经验收的安全值；每侧需单独记录发布频率、限位和夹爪标定。
 
 ## 只读核对
@@ -95,3 +99,9 @@ done
 S09 的 `s09_single_arm_driver.launch` 以 `side:=left|right` 选择上述单侧命名空间，默认
 `start_driver=false` 且固定 `auto_enable=false`。官方节点启动时仍会发送模式帧，因此
 S09 只验证 launch 展开与构建，不得在真机上设置 `start_driver:=true`。
+
+S10 的 `s10_arm_safety_filter.launch` 同样要求闭集 `side`，且 `start_filter=false`。过滤器
+不会调用驱动服务，也不发布 `*_raw` 驱动入口；只有新鲜真实反馈、定位有效、IK 未越界、
+协调器授权和新遥操作会话同时成立时才发布过滤后目标。任何超时、时间倒退或异常数值会
+撤销会话并锁存故障。ROS 1 话题不是访问控制，`control_authorized` 的唯一发布者约束须由
+S11 的完整 launch 和 ROS graph 审计实现。

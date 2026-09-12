@@ -10,3 +10,6 @@
 - `pi05_diagnostics.launch`：只读诊断
 
 完整启动文件应暴露侧别、对应 CAN 接口、Pika 串口和使能策略；左右命名空间必须隔离，真机默认值不得自动使能机械臂。
+
+S10 的单侧安全过滤入口位于 `pi05_control/launch/s10_arm_safety_filter.launch`。它默认
+`start_filter=false`，左右实例从本包同一份 `config/arm_filter.yaml` 加载参数。

@@ -76,7 +76,10 @@ pi05_require_command catkin_make
 
 if [[ "$check_rosdep" == true ]]; then
   pi05_require_command rosdep
-  rosdep check --from-paths "$workspace/src" --ignore-src --rosdistro noetic
+  # data_msgs is a source dependency pinned in third_party/pi05-upstream.repos,
+  # not a rosdep/apt key. This skips only its package key, not its installation.
+  rosdep check --from-paths "$workspace/src" --ignore-src --rosdistro noetic \
+    --skip-keys data_msgs
 fi
 
 pi05_log "building $workspace with $venv_path/bin/python and $jobs jobs"

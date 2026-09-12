@@ -1,0 +1,17 @@
+<launch>
+  <!-- Required closed-set selector. The node is opt-in because its output is a motion target. -->
+  <arg name="side"/>
+  <arg name="start_filter" default="false"/>
+
+  <group ns="$(eval {'left': 'left_arm', 'right': 'right_arm'}[arg('side')])">
+    <node if="$(arg start_filter)"
+          pkg="pi05_control"
+          type="arm_safety_filter_node.py"
+          name="safety_filter"
+          output="screen"
+          required="true">
+      <param name="side" value="$(arg side)"/>
+      <rosparam command="load" file="$(find pi05_bringup)/config/arm_filter.yaml"/>
+    </node>
+  </group>
+</launch>

@@ -59,7 +59,8 @@ else
   pi05_log '  rosdep init: already initialized, skip'
 fi
 pi05_log '  rosdep update --rosdistro noetic'
-pi05_log "  rosdep install --from-paths $workspace/src --ignore-src --rosdistro noetic -y"
+pi05_log "  rosdep install --from-paths $workspace/src --ignore-src --rosdistro noetic --skip-keys data_msgs -y"
+pi05_log '  data_msgs: skipped as a pinned VCS source dependency; this command does not install it'
 
 if [[ "$apply" != true ]]; then
   pi05_log 'DRY-RUN complete; rerun with --apply to make changes'
@@ -77,7 +78,9 @@ fi
 
 rosdep update --rosdistro noetic
 pi05_log 'rosdep simulation follows; no packages are changed by this command'
-rosdep install --from-paths "$workspace/src" --ignore-src --rosdistro noetic --simulate
+rosdep install --from-paths "$workspace/src" --ignore-src --rosdistro noetic \
+  --skip-keys data_msgs --simulate
 pi05_log 'running the previously previewed rosdep installation'
-rosdep install --from-paths "$workspace/src" --ignore-src --rosdistro noetic -y
+rosdep install --from-paths "$workspace/src" --ignore-src --rosdistro noetic \
+  --skip-keys data_msgs -y
 pi05_log 'rosdep setup and dependency installation complete'

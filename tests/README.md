@@ -50,3 +50,5 @@
   聚合判断和无写入 API 契约测试。
 - `test_single_arm_driver_launch.sh`：S09 左右 launch 展开、必填 side、默认不启动、
   `auto_enable=false` 和全部驱动接口相对命名/分侧隔离契约测试；不启动驱动节点。
+- `test_safety_filter.sh`：S10 通用过滤状态机的左右离线回放、故障注入及 launch 安全边界；
+  不启动 Piper 驱动，不连接真机命令入口。
