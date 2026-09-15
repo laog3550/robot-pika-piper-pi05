@@ -20,21 +20,24 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
         self.assertNotIn("default", self.args["side"])
         self.assertEqual(self.args["start_driver"].get("default"), "false")
         self.assertEqual(
-            set(self.args), {"side", "start_driver", "publish_business_feedback"})
+            set(self.args), {"side", "start_driver", "publish_business_feedback",
+                             "auto_enable", "can_port"})
         self.assertEqual(self.args["publish_business_feedback"].get("default"), "false")
+        self.assertEqual(self.args["auto_enable"].get("default"), "false")
+        self.assertIn("left_piper", self.args["can_port"].get("default"))
+        self.assertIn("right_piper", self.args["can_port"].get("default"))
         namespace = self.group.attrib["ns"]
         self.assertIn("{'left': 'left_arm', 'right': 'right_arm'}", namespace)
         self.assertIn("[arg('side')]", namespace)
 
-    def test_driver_start_is_explicit_and_never_auto_enables(self):
+    def test_driver_start_and_auto_enable_are_explicit(self):
         self.assertEqual(self.node.attrib.get("if"), "$(arg start_driver)")
         self.assertEqual(self.node.attrib.get("pkg"), "piper")
         self.assertEqual(self.node.attrib.get("type"), "piper_ctrl_single_node.py")
         self.assertEqual(self.node.attrib.get("name"), "piper_driver_raw")
         params = {item.attrib["name"]: item.attrib["value"] for item in self.node.findall("param")}
-        self.assertIn("{'left': 'left_piper', 'right': 'right_piper'}", params["can_port"])
-        self.assertIn("[arg('side')]", params["can_port"])
-        self.assertEqual(params["auto_enable"], "false")
+        self.assertEqual(params["can_port"], "$(arg can_port)")
+        self.assertEqual(params["auto_enable"], "$(arg auto_enable)")
         self.assertNotIn("hold_position_on_enable", params)
 
     def test_every_driver_interface_is_relative_and_remapped(self):

@@ -1,0 +1,13 @@
+<launch>
+  <arg name="start" default="false"/><arg name="connect_drivers" default="false"/>
+  <arg name="auto_enable" default="true"/><arg name="tool_offset_m" default="0.19"/>
+  <arg name="left_can_port" default="left_piper"/><arg name="right_can_port" default="right_piper"/>
+  <include file="$(find pi05_left_teleop)/launch/side_teleop.launch">
+    <arg name="side" value="left"/><arg name="start" value="$(arg start)"/><arg name="connect_driver" value="$(arg connect_drivers)"/>
+    <arg name="auto_enable" value="$(arg auto_enable)"/><arg name="tool_offset_m" value="$(arg tool_offset_m)"/><arg name="can_port" value="$(arg left_can_port)"/>
+  </include>
+  <include file="$(find pi05_left_teleop)/launch/side_teleop.launch">
+    <arg name="side" value="right"/><arg name="start" value="$(arg start)"/><arg name="connect_driver" value="$(arg connect_drivers)"/>
+    <arg name="auto_enable" value="$(arg auto_enable)"/><arg name="tool_offset_m" value="$(arg tool_offset_m)"/><arg name="can_port" value="$(arg right_can_port)"/>
+  </include>
+</launch>

@@ -2,7 +2,7 @@
 <package format="2">
   <name>pi05_control</name>
   <version>0.1.0</version>
-  <description>Safety conditioning and ROS adapters for PI05 Pika-to-Piper control.</description>
+  <description>Piper driver wrappers and ROS adapters for PI05.</description>
   <maintainer email="maintainer@example.com">PI05 Maintainer</maintainer>
   <license>TODO</license>
 

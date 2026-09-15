@@ -1,25 +1,7 @@
 # 包级测试
 
-计划覆盖：
-
-- 死区与低通计算
-- 最大关节/夹爪步长限制
-- 未使能和未开始会话时拒绝命令
-- 定位丢失与命令超时
-- disable/enable 清除旧目标
-- 回到会话起始姿态的插值与中断
-- JointState 长度、名称和异常输入处理
-
-优先使用不连接真机的单元测试和 ROS 回放测试。
-
 当前已有：
 
 - `test_piper_feedback.py`：S08 Piper 原始反馈端序、单位和完整帧组；S12 高速电机反馈的
   速度/电流解码及只读聚合。
-- `test_single_arm_driver_launch.py`：S09 必填 side、安全默认值及全部驱动接口分侧 remap。
-- `test_safety_filter.py`：S10 左右一致回放、全部会话门禁、死区/低通/步长、异常输入、
-  定位/反馈/命令超时、时间倒退、故障锁存和旧目标清除。
-- `test_safety_filter_launch.py`：S10 闭集 side、默认不启动、共享配置及无原始驱动旁路。
-- `test_dual_arm_safety.py`：S11 双侧前置条件、状态超时、会话同步、故障传播和恢复。
-- `test_dual_arm_bringup_launch.py`：S11 `off|simulation|hardware` 闭集、双侧实例和连接。
-- `test_control_graph.py`：S11 命令/授权唯一发布者、服务所有者和遗留全局入口拒绝。
+- `test_single_arm_driver_launch.py`：分侧 CAN、自动使能参数及驱动接口 remap。

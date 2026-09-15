@@ -1,0 +1,36 @@
+<launch>
+  <arg name="side"/>
+  <arg name="start" default="false"/>
+  <arg name="connect_driver" default="false"/>
+  <arg name="auto_enable" default="true"/>
+  <arg name="tool_offset_m" default="0.19"/>
+  <arg name="can_port" default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
+  <group if="$(arg start)">
+    <include file="$(find pi05_control)/launch/s09_single_arm_driver.launch">
+      <arg name="side" value="$(arg side)"/>
+      <arg name="start_driver" value="$(arg connect_driver)"/>
+      <arg name="publish_business_feedback" value="true"/>
+      <arg name="auto_enable" value="$(arg auto_enable)"/>
+      <arg name="can_port" value="$(arg can_port)"/>
+    </include>
+    <group ns="$(eval '/' + arg('side') + '_arm/teleop')">
+      <node pkg="pi05_left_teleop" type="component.py" name="fk" args="--role fk --side $(arg side)" required="true" output="screen">
+        <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
+        <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
+        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+      </node>
+      <node pkg="pi05_left_teleop" type="component.py" name="ik" args="--role ik --side $(arg side)" required="true" output="screen">
+        <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
+        <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
+        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+        <remap from="$(eval '/joint_states_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/' + arg('side') + '_arm/joint_ctrl_raw')"/>
+      </node>
+      <node pkg="pi05_left_teleop" type="component.py" name="teleop" args="--role teleop --side $(arg side)" required="true" output="screen">
+        <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
+        <param name="return_zero_position" type="str" value="False"/>
+        <remap from="$(eval '/joint_states_gripper_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+        <remap from="$(eval '/pika_pose_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/pi05/pika_input/' + arg('side') + '/pose')"/>
+      </node>
+    </group>
+  </group>
+</launch>

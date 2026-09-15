@@ -3,6 +3,9 @@
   <arg name="side"/>
   <arg name="start_driver" default="false"/>
   <arg name="publish_business_feedback" default="false"/>
+  <arg name="auto_enable" default="false"/>
+  <arg name="can_port"
+       default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
 
   <!--
     The approved upstream piper_ros@ac41fcbc node transmits MotionCtrl_2 during
@@ -17,8 +20,8 @@
           output="screen"
           required="true">
       <param name="can_port"
-             value="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
-      <param name="auto_enable" value="false"/>
+             value="$(arg can_port)"/>
+      <param name="auto_enable" value="$(arg auto_enable)"/>
       <param name="gripper_exist" value="true"/>
       <param name="gripper_val_mutiple" value="1"/>
 
