@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="start" default="false"/>
+  <group if="$(arg start)">
+    <group ns="/pi05/teleop_replay/left_arm">
+      <remap from="/pika_pose_l" to="/pi05/pika_input/left/pose"/>
+      <remap from="/pika_localization_status_l" to="/pi05/pika_input/left/localization_status"/>
+      <remap from="/joint_states_single_l" to="/pi05/teleop_replay/left_arm/feedback"/>
+      <remap from="/joint_states_gripper_l" to="/pi05/teleop_replay/left_arm/feedback"/>
+      <remap from="/joint_states_l" to="/pi05/teleop_replay/left_arm/raw_target"/>
+      <remap from="/joint_states_gripper_raw_l" to="/pi05/teleop_replay/left_arm/raw_target"/>
+      <remap from="/teleop_status_l" to="/pi05/teleop_replay/left_arm/teleop_status"/>
+      <remap from="/teleop_trigger_l" to="/pi05/teleop_replay/left_arm/teleop_trigger"/>
+      <remap from="/arm_control_status_l" to="/pi05/teleop_replay/left_arm/ik_status"/>
+      <remap from="/left_arm/control_authorized" to="/pi05/teleop_replay/left_arm/control_authorized"/>
+      <remap from="/left_arm/safety_filter_status" to="/pi05/teleop_replay/left_arm/safety_filter_status"/>
+      <remap from="/left_arm/reset_filter_fault" to="/pi05/teleop_replay/left_arm/reset_filter_fault"/>
+      <remap from="/piper_FK_l/urdf_end_pose" to="/pi05/teleop_replay/left_arm/fk/urdf_end_pose"/>
+      <remap from="/piper_FK_l/urdf_end_pose_orient" to="/pi05/teleop_replay/left_arm/fk/urdf_end_pose_orient"/>
+      <remap from="/piper_FK_l/ctrl_end_pose" to="/pi05/teleop_replay/left_arm/fk/ctrl_end_pose"/>
+      <remap from="/piper_FK_l/receive_end_pose_orient" to="/pi05/teleop_replay/left_arm/fk/receive_end_pose_orient"/>
+      <remap from="/piper_IK_l/urdf_end_pose" to="/pi05/teleop_replay/left_arm/ik/urdf_end_pose"/>
+      <remap from="/piper_IK_l/urdf_end_pose_orient" to="/pi05/teleop_replay/left_arm/ik/urdf_end_pose_orient"/>
+      <remap from="/piper_IK_l/ctrl_end_pose" to="/pi05/teleop_replay/left_arm/ik/ctrl_end_pose"/>
+      <remap from="/piper_IK_l/receive_end_pose_orient" to="/pi05/teleop_replay/left_arm/ik/receive_end_pose_orient"/>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="fk" args="--role fk" output="screen" required="true">
+        <param name="index_name" value="_l"/>
+        <rosparam param="gripper_xyzrpy">[0.19, 0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="ik" args="--role ik" output="screen" required="true">
+        <param name="index_name" value="_l"/>
+        <rosparam param="gripper_xyzrpy">[0.19, 0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="teleop" args="--role teleop" output="screen" required="true">
+        <param name="index_name" value="_l"/>
+        <param name="return_zero_position" value="False" type="str"/>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="filter" args="--role filter" output="screen" required="true">
+        <param name="index_name" value="_l"/>
+        <param name="side" value="left"/>
+        <rosparam command="load" file="$(find pi05_bringup)/config/arm_filter.yaml"/>
+        <remap from="/joint_states_gripper_l" to="/pi05/teleop_replay/left_arm/filtered_target"/>
+      </node>
+    </group>
+    <group ns="/pi05/teleop_replay/right_arm">
+      <remap from="/pika_pose_r" to="/pi05/pika_input/right/pose"/>
+      <remap from="/pika_localization_status_r" to="/pi05/pika_input/right/localization_status"/>
+      <remap from="/joint_states_single_r" to="/pi05/teleop_replay/right_arm/feedback"/>
+      <remap from="/joint_states_gripper_r" to="/pi05/teleop_replay/right_arm/feedback"/>
+      <remap from="/joint_states_r" to="/pi05/teleop_replay/right_arm/raw_target"/>
+      <remap from="/joint_states_gripper_raw_r" to="/pi05/teleop_replay/right_arm/raw_target"/>
+      <remap from="/teleop_status_r" to="/pi05/teleop_replay/right_arm/teleop_status"/>
+      <remap from="/teleop_trigger_r" to="/pi05/teleop_replay/right_arm/teleop_trigger"/>
+      <remap from="/arm_control_status_r" to="/pi05/teleop_replay/right_arm/ik_status"/>
+      <remap from="/right_arm/control_authorized" to="/pi05/teleop_replay/right_arm/control_authorized"/>
+      <remap from="/right_arm/safety_filter_status" to="/pi05/teleop_replay/right_arm/safety_filter_status"/>
+      <remap from="/right_arm/reset_filter_fault" to="/pi05/teleop_replay/right_arm/reset_filter_fault"/>
+      <remap from="/piper_FK_r/urdf_end_pose" to="/pi05/teleop_replay/right_arm/fk/urdf_end_pose"/>
+      <remap from="/piper_FK_r/urdf_end_pose_orient" to="/pi05/teleop_replay/right_arm/fk/urdf_end_pose_orient"/>
+      <remap from="/piper_FK_r/ctrl_end_pose" to="/pi05/teleop_replay/right_arm/fk/ctrl_end_pose"/>
+      <remap from="/piper_FK_r/receive_end_pose_orient" to="/pi05/teleop_replay/right_arm/fk/receive_end_pose_orient"/>
+      <remap from="/piper_IK_r/urdf_end_pose" to="/pi05/teleop_replay/right_arm/ik/urdf_end_pose"/>
+      <remap from="/piper_IK_r/urdf_end_pose_orient" to="/pi05/teleop_replay/right_arm/ik/urdf_end_pose_orient"/>
+      <remap from="/piper_IK_r/ctrl_end_pose" to="/pi05/teleop_replay/right_arm/ik/ctrl_end_pose"/>
+      <remap from="/piper_IK_r/receive_end_pose_orient" to="/pi05/teleop_replay/right_arm/ik/receive_end_pose_orient"/>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="fk" args="--role fk" output="screen" required="true">
+        <param name="index_name" value="_r"/>
+        <rosparam param="gripper_xyzrpy">[0.19, 0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="ik" args="--role ik" output="screen" required="true">
+        <param name="index_name" value="_r"/>
+        <rosparam param="gripper_xyzrpy">[0.19, 0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="teleop" args="--role teleop" output="screen" required="true">
+        <param name="index_name" value="_r"/>
+        <param name="return_zero_position" value="False" type="str"/>
+      </node>
+      <node pkg="pi05_teleop_replay" type="replay_component.py" name="filter" args="--role filter" output="screen" required="true">
+        <param name="index_name" value="_r"/>
+        <param name="side" value="right"/>
+        <rosparam command="load" file="$(find pi05_bringup)/config/arm_filter.yaml"/>
+        <remap from="/joint_states_gripper_r" to="/pi05/teleop_replay/right_arm/filtered_target"/>
+      </node>
+    </group>
+    <node pkg="pi05_teleop_replay" type="replay_component.py" name="coordinator" ns="/pi05/teleop_replay" args="--role coordinator" required="true" output="screen">
+      <param name="hardware_actions_enabled" value="true" type="bool"/>
+      <rosparam command="load" file="$(find pi05_bringup)/config/dual_arm_safety.yaml"/>
+      <remap from="/left_arm/control_authorized" to="/pi05/teleop_replay/left_arm/control_authorized"/>
+      <remap from="/left_arm/safety_filter_status" to="/pi05/teleop_replay/left_arm/safety_filter_status"/>
+      <remap from="/left_arm/arm_status" to="/pi05/teleop_replay/left_arm/arm_status"/>
+      <remap from="/left_arm/reset_filter_fault" to="/pi05/teleop_replay/left_arm/reset_filter_fault"/>
+      <remap from="/left_arm/enable_srv_raw" to="/pi05/teleop_replay/mock/left/enable"/>
+      <remap from="/left_arm/stop_srv_raw" to="/pi05/teleop_replay/mock/left/stop"/>
+      <remap from="/right_arm/control_authorized" to="/pi05/teleop_replay/right_arm/control_authorized"/>
+      <remap from="/right_arm/safety_filter_status" to="/pi05/teleop_replay/right_arm/safety_filter_status"/>
+      <remap from="/right_arm/arm_status" to="/pi05/teleop_replay/right_arm/arm_status"/>
+      <remap from="/right_arm/reset_filter_fault" to="/pi05/teleop_replay/right_arm/reset_filter_fault"/>
+      <remap from="/right_arm/enable_srv_raw" to="/pi05/teleop_replay/mock/right/enable"/>
+      <remap from="/right_arm/stop_srv_raw" to="/pi05/teleop_replay/mock/right/stop"/>
+      <remap from="/dual_arm/status" to="/pi05/teleop_replay/dual_arm/status"/>
+      <remap from="/dual_arm/enable_srv" to="/pi05/teleop_replay/dual_arm/enable_srv"/>
+      <remap from="/dual_arm/stop_srv" to="/pi05/teleop_replay/dual_arm/stop_srv"/>
+      <remap from="/dual_arm/reset_fault" to="/pi05/teleop_replay/dual_arm/reset_fault"/>
+    </node>
+  </group>
+</launch>

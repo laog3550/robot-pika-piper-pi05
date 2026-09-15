@@ -81,6 +81,19 @@ roslaunch pi05_control s08_readonly_feedback.launch
 scripts/check_pika_localization.sh --duration 10
 ```
 
+在 Piper 驱动保持关闭时，可让操作员分别缓慢移动左右 Pika，并执行：
+
+```bash
+scripts/check_pika_localization.sh --duration 15 --require-motion
+```
+
+该模式要求每侧在窗口内至少平移 `0.02 m` 或旋转 `0.10 rad`，但只输出
+`motion=detected|not-detected`，不显示或保存位姿值。它只验证摇操输入活动，不会产生机械臂命令。
+
+若话题保持约 120 Hz 但持续 `accurate=0` 且 `motion=not-detected`，不能把频率解释为定位
+有效。先在 Piper 驱动关闭时检查底层跟踪器是否实际连接；只有 Watchman USB 接收器而没有
+跟踪器对象、光学或 IMU 数据时，应唤醒/供电并恢复无线配对，不需要插拔 Pika 串口。
+
 检查器只订阅 `/pika_pose_l|r` 和 `/pika_localization_status_l|r`，不启动定位节点、不创建
 发布者或服务，也不显示坐标、frame 名称或跟踪器标识。默认要求两侧位姿至少 30 Hz、
 各至少 5 条状态消息、所有状态均为 `accurate=true`，同时要求位姿有限、四元数合理、

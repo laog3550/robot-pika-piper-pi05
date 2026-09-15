@@ -85,6 +85,16 @@ scripts/setup_rosdep.sh --apply
 键；脚本只对这两个键使用 `--skip-keys`，避免 rosdep 把源码依赖误报为未知系统包。这不
 会安装或豁免它们，运行依赖这些消息的节点前仍必须从固定 commit 构建对应 overlay。
 
+本机固定上游工作区位于 `/home/mips/robot/pi05-upstream-ws`。运行需要 `piper`、
+`piper_msgs` 或 `data_msgs` 的节点时按以下顺序叠加，`--extend` 保留上游运行依赖：
+
+```bash
+source /opt/ros/noetic/setup.bash
+source /home/mips/robot/pi05-upstream-ws/devel/setup.bash
+source /home/mips/robot/robot-pika-piper-pi05/devel/setup.bash --extend
+source /home/mips/robot/robot-pika-piper-pi05/.venv/bin/activate
+```
+
 ## 构建与检查
 
 ```bash

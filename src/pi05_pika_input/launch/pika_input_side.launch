@@ -1,0 +1,9 @@
+<launch>
+  <arg name="side"/>
+  <group ns="/pi05/pika_input/$(arg side)">
+    <node pkg="pi05_pika_input" type="side_input.py" name="side_input"
+          output="screen" required="true">
+      <param name="side" value="$(arg side)"/>
+    </node>
+  </group>
+</launch>

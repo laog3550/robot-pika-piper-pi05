@@ -19,8 +19,18 @@
   不写串口、不显示或保存传感器值
 - `check_piper_can_stream.sh <left|right>`：S08 分侧被动检查 Piper 标准反馈 ID，并拒绝
   观察到控制/配置 ID 的窗口；不发送帧、不显示或保存 payload
+- `check_piper_joint_stability.sh <left|right>`：被动统计六关节原始 CAN 反馈变化范围；可用
+  `--exclude-joint` 排除正在执行的小步长目标，只审计非目标关节，不显示绝对角度或 payload
+- `check_piper_motor_telemetry.sh <left|right>`：只接收 `0x251`–`0x256` 电机高速反馈并
+  汇总样本数、绝对速度峰值和绝对电流峰值，不输出电机位置或 CAN payload
+- `query_piper_firmware.sh check|apply <left|right>`：`check` 不发送帧；`apply` 需显式确认，
+  仅通过固定 SDK 发送 `0x472`/`0x4AF` 查询并输出固件版本，不调用任何运动 API
+- `query_piper_limits.sh check|apply <left|right>`：`check` 不发送帧；`apply` 需显式确认，
+  仅通过固定 SDK 的 `0x472`/`0x4AF` 初始化查询读取六轴角度、速度和加速度上限，拒绝缺轴、
+  非正速度/加速度或上下限颠倒的响应，不调用使能、运动或参数设置 API
 - `check_pika_localization.sh`：S08 订阅既有左右 Pika 位姿/有效状态，只报告汇总频率和
-  有效样本数；不启动定位节点、不显示坐标或设备标识
+  有效样本数；`--require-motion` 可在机械臂禁用时要求两只 Pika 均检测到平移或旋转活动；
+  不启动定位节点、不显示坐标或设备标识
 - `check_control_graph.py --mode simulation|hardware`：S11 只读审计命令、授权和服务所有者，
   拒绝跨侧、多发布者及无侧别遗留控制接口
 

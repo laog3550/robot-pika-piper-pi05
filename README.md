@@ -156,6 +156,8 @@ scripts/check_pika_stream.sh left
 scripts/check_pika_stream.sh right
 scripts/check_piper_can_stream.sh left
 scripts/check_piper_can_stream.sh right
+# 只输出六关节反馈变化范围；不显示绝对角度或 CAN payload：
+scripts/check_piper_joint_stability.sh --duration 5 left
 # 构建后可启动本项目独立的双侧 Piper ROS 原始反馈；只接收、不使能：
 source devel/setup.bash
 roslaunch pi05_control s08_readonly_feedback.launch

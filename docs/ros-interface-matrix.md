@@ -114,7 +114,8 @@ S11 使用 `s11_dual_arm_bringup.launch` 的单一 `mode` 闭集：`off`（默�
 `joint_ctrl_raw`，并将驱动反馈连接到本侧业务反馈；协调器是两路授权的唯一发布者。
 
 协调器只有在两侧过滤器、反馈、定位、IK 与驱动状态均新鲜正常时才转发双侧 enable。
-任一侧关键故障先同步发布双侧 `control_authorized=false`，随后依次请求双侧 software
-stop 和双侧 disable。部分 enable 也执行同样回滚。授权以 20 Hz 心跳续租；协调器退出
+任一侧关键故障先同步发布双侧 `control_authorized=false`，随后请求双侧 software stop。
+S12 真机发现 disable 可能导致未支撑机械臂重力下落，因此自动 disable 默认禁止，须在
+现场机械支撑后人工执行；部分 enable 也按此策略回滚。授权以 20 Hz 心跳续租；协调器退出
 后，各过滤器最迟在 `authorization_timeout_s` 到期时锁存并停止输出。上述 stop/disable
 仍需 S12 分侧真机验证，不能等同硬件急停。

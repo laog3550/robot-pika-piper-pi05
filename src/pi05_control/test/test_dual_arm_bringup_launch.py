@@ -68,11 +68,18 @@ class DualArmBringupLaunchTest(unittest.TestCase):
         self.assertIn('"/{}_arm/stop_srv_raw".format(side)', self.source)
         self.assertIn("for side in SIDES", self.source)
         fault_worker = self.source.index("def _fault_response_worker")
+        call_enable = self.source.index("def _call_enable", fault_worker)
         revoke = self.source.index("self.publish_authorization(False)", fault_worker)
         stop = self.source.index("stop_results", revoke)
-        disable = self.source.index("disable_results", stop)
         self.assertLess(revoke, stop)
-        self.assertLess(stop, disable)
+        self.assertNotIn("_call_enable", self.source[fault_worker:call_enable])
+
+    def test_partial_enable_rollback_stops_without_disabling(self):
+        enable_callback = self.source.index("def enable_callback")
+        manual_disable = self.source.index("def _manual_disable", enable_callback)
+        rollback = self.source[enable_callback:manual_disable]
+        self.assertIn("rollback_stop", rollback)
+        self.assertNotIn("_call_enable(side, False)", rollback)
 
 
 if __name__ == "__main__":

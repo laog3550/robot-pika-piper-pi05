@@ -26,6 +26,18 @@ rate, failures = module.evaluate(stats.snapshot(), 0.05, 30.0, 1)
 assert rate == 40.0
 assert failures == []
 
+moving = module.LocalizationStats()
+moving.observe_pose((0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0), 1.0, "base")
+moving.observe_pose((0.03, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0), 2.0, "base")
+moving.observe_status(True)
+_, failures = module.evaluate(
+    moving.snapshot(), 0.05, 30.0, 1, require_motion=True)
+assert failures == []
+
+_, failures = module.evaluate(
+    stats.snapshot(), 0.05, 30.0, 1, require_motion=True)
+assert failures == ["no deliberate Pika motion detected"]
+
 bad = module.LocalizationStats()
 bad.observe_pose((math.nan, 0.0, 0.0), (0.0, 0.0, 0.0, 0.0), 2.0, "base")
 bad.observe_pose((0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0), 1.0, "changed")

@@ -8,6 +8,7 @@
 # Machine-local configuration
 /config/pi05.env
 /config/s07-hardware.env
+/config/s12-acceptance.env
 *.local.yaml
 
 # Python

@@ -30,7 +30,8 @@ Pika Right ─► right teleop ─► right safety filter ─► /right_arm driv
 - 分侧状态桥把反馈新鲜度、定位、IK、遥操作会话与协调器授权汇总为
   `/{side}_arm/safety_filter_status`；故障锁存后必须撤销授权并满足恢复前置条件。
 - 协调器以周期心跳同时续租两侧授权；自身退出、任一状态超时或左右会话长期不一致都会
-  使租约失效。故障响应顺序固定为撤权、双侧 software stop、双侧 disable。
+  使租约失效。故障响应顺序固定为撤权和双侧 software stop；S12 真机发现未支撑状态下
+  disable 存在重力下落风险，因此只允许在机械支撑后人工 disable。
 
 ## 启停顺序
 

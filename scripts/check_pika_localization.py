@@ -28,6 +28,10 @@ class LocalizationStats:
         self.frame_changed_count = 0
         self.last_stamp = None
         self.frame_id = None
+        self.first_position = None
+        self.first_orientation = None
+        self.max_translation = 0.0
+        self.max_rotation = 0.0
 
     def observe_pose(self, position, orientation, stamp, frame_id):
         values = tuple(position) + tuple(orientation)
@@ -44,6 +48,23 @@ class LocalizationStats:
                 self.frame_id = frame_id
             elif frame_id != self.frame_id:
                 self.frame_changed_count += 1
+            if finite:
+                if self.first_position is None:
+                    self.first_position = tuple(position)
+                    self.first_orientation = tuple(orientation)
+                else:
+                    translation = math.sqrt(sum(
+                        (value - initial) ** 2
+                        for value, initial in zip(position, self.first_position)
+                    ))
+                    quaternion_dot = abs(sum(
+                        value * initial
+                        for value, initial in zip(orientation, self.first_orientation)
+                    ))
+                    quaternion_dot = min(1.0, max(0.0, quaternion_dot))
+                    rotation = 2.0 * math.acos(quaternion_dot)
+                    self.max_translation = max(self.max_translation, translation)
+                    self.max_rotation = max(self.max_rotation, rotation)
 
     def observe_status(self, accurate):
         with self.lock:
@@ -60,10 +81,13 @@ class LocalizationStats:
                 "non_monotonic_count": self.non_monotonic_count,
                 "frame_changed_count": self.frame_changed_count,
                 "frame_present": bool(self.frame_id),
+                "max_translation": self.max_translation,
+                "max_rotation": self.max_rotation,
             }
 
 
-def evaluate(stats, elapsed, min_pose_rate, min_status_samples):
+def evaluate(stats, elapsed, min_pose_rate, min_status_samples,
+             require_motion=False, min_translation=0.02, min_rotation=0.10):
     failures = []
     pose_rate = stats["pose_count"] / elapsed if elapsed > 0 else 0.0
     if pose_rate < min_pose_rate:
@@ -78,6 +102,9 @@ def evaluate(stats, elapsed, min_pose_rate, min_status_samples):
         failures.append("non-monotonic pose timestamp observed")
     if stats["frame_changed_count"] or not stats["frame_present"]:
         failures.append("missing or unstable pose frame")
+    if (require_motion and stats["max_translation"] < min_translation
+            and stats["max_rotation"] < min_rotation):
+        failures.append("no deliberate Pika motion detected")
     return pose_rate, failures
 
 
@@ -105,6 +132,14 @@ def parse_args(argv):
     parser.add_argument("--duration", type=positive_float, default=10.0)
     parser.add_argument("--min-pose-rate", type=positive_float, default=30.0)
     parser.add_argument("--min-status-samples", type=positive_int, default=5)
+    parser.add_argument(
+        "--require-motion",
+        action="store_true",
+        help=(
+            "require each Pika to move at least 0.02 m or rotate 0.10 rad; "
+            "only a detected/not-detected result is printed"
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -213,16 +248,22 @@ def main(argv=None):
     for side in ("left", "right"):
         snapshot = sides[side].snapshot()
         pose_rate, failures = evaluate(
-            snapshot, elapsed, args.min_pose_rate, args.min_status_samples
+            snapshot, elapsed, args.min_pose_rate, args.min_status_samples,
+            require_motion=args.require_motion,
         )
         print(
-            "[PI05] %s Pika localization: poses=%d rate=%.1fHz status=%d accurate=%d"
+            "[PI05] %s Pika localization: poses=%d rate=%.1fHz status=%d "
+            "accurate=%d motion=%s"
             % (
                 side,
                 snapshot["pose_count"],
                 pose_rate,
                 snapshot["status_count"],
                 snapshot["accurate_count"],
+                "detected" if (
+                    snapshot["max_translation"] >= 0.02
+                    or snapshot["max_rotation"] >= 0.10
+                ) else "not-detected",
             )
         )
         for failure in failures:

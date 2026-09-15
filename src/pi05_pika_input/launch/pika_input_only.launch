@@ -1,0 +1,16 @@
+<launch>
+  <arg name="left" default="true"/>
+  <arg name="right" default="false"/>
+  <arg name="start_locator" default="false"/>
+  <arg name="mapping_order" default="unverified"/>
+  <node if="$(arg start_locator)" pkg="pi05_pika_input" type="safe_locator.py"
+        name="safe_locator" ns="/pi05/pika_input" output="screen" required="true">
+    <param name="mapping_order" value="$(arg mapping_order)"/>
+  </node>
+  <include if="$(arg left)" file="$(find pi05_pika_input)/launch/pika_input_side.launch">
+    <arg name="side" value="left"/>
+  </include>
+  <include if="$(arg right)" file="$(find pi05_pika_input)/launch/pika_input_side.launch">
+    <arg name="side" value="right"/>
+  </include>
+</launch>

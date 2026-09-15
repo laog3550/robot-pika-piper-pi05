@@ -1,0 +1,41 @@
+<launch>
+  <arg name="start" default="false"/>
+  <arg name="connect_driver" default="false"/>
+  <arg name="tool_offset_m" default="0.19"/>
+  <group if="$(arg start)">
+    <include file="$(find pi05_control)/launch/s09_single_arm_driver.launch">
+      <arg name="side" value="left"/><arg name="start_driver" value="$(arg connect_driver)"/>
+      <arg name="publish_business_feedback" value="true"/>
+    </include>
+    <group ns="/left_arm/teleop">
+      <remap from="/joint_states_single_l" to="/joint_states_single_l"/>
+      <remap from="/joint_states_gripper_l" to="/joint_states_single_l"/>
+      <remap from="/joint_states_l" to="/left_arm/teleop/raw_target"/>
+      <remap from="/pika_pose_l" to="/pi05/pika_input/left/pose"/>
+      <node pkg="pi05_left_teleop" type="component.py" name="fk" args="--role fk" required="true" output="screen">
+        <param name="index_name" value="_l"/>
+        <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
+      </node>
+      <node pkg="pi05_left_teleop" type="component.py" name="ik" args="--role ik" required="true" output="screen">
+        <param name="index_name" value="_l"/>
+        <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
+      </node>
+      <node pkg="pi05_left_teleop" type="component.py" name="teleop" args="--role teleop" required="true" output="screen">
+        <param name="index_name" value="_l"/>
+        <param name="return_zero_position" type="str" value="False"/>
+      </node>
+    </group>
+    <node pkg="pi05_control" type="arm_safety_filter_node.py" name="safety_filter" ns="/left_arm" required="true" output="screen">
+      <param name="side" value="left"/>
+      <rosparam command="load" file="$(find pi05_bringup)/config/arm_filter.yaml"/>
+      <param name="speed_percent" value="40"  />
+      <param name="max_arm_step_rad" value="0.002"/>
+      <remap from="/joint_states_gripper_raw_l" to="/left_arm/teleop/raw_target"/>
+      <remap from="/joint_states_gripper_l" to="/left_arm/teleop/filtered_target"/>
+      <remap from="/pika_localization_status_l" to="/pi05/pika_input/left/localization_status"/>
+    </node>
+    <node pkg="pi05_left_teleop" type="supervisor.py" name="supervisor" ns="/left_arm/teleop" required="true" output="screen">
+      <param name="hardware_actions_enabled" value="$(arg connect_driver)"/>
+    </node>
+  </group>
+</launch>

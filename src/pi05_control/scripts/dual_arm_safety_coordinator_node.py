@@ -159,9 +159,9 @@ class DualArmSafetyCoordinatorNode(object):
                     self.last_action_summary = "authorization revoked; hardware actions inhibited"
                 else:
                     stop_results = [self._call_stop(side) for side in SIDES]
-                    disable_results = [self._call_enable(side, False) for side in SIDES]
-                    self.last_action_summary = "stop={} disable={}".format(
-                        stop_results, disable_results)
+                    self.last_action_summary = (
+                        "stop={}; disable requires mechanical support and manual request"
+                    ).format(stop_results)
         finally:
             with self.lock:
                 self.fault_worker_running = False
@@ -204,9 +204,9 @@ class DualArmSafetyCoordinatorNode(object):
                     self.coordinator.deauthorize(self.now())
                     self.publish_authorization(False)
                 stop_results = [self._call_stop(side) for side in SIDES]
-                disable_results = [self._call_enable(side, False) for side in SIDES]
-                self.last_action_summary = "enable={} rollback_stop={} rollback_disable={}".format(
-                    results, stop_results, disable_results)
+                self.last_action_summary = (
+                    "enable={} rollback_stop={}; disable requires mechanical support and manual request"
+                ).format(results, stop_results)
                 with self.lock:
                     self.publish_status()
                 return EnableResponse(False)
@@ -221,8 +221,6 @@ class DualArmSafetyCoordinatorNode(object):
             if not accepted:
                 for side in SIDES:
                     self._call_stop(side)
-                for side in SIDES:
-                    self._call_enable(side, False)
             return EnableResponse(accepted)
 
     def _manual_disable(self):
