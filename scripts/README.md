@@ -31,8 +31,9 @@
 - `check_pika_localization.sh`：S08 订阅既有左右 Pika 位姿/有效状态，只报告汇总频率和
   有效样本数；`--require-motion` 可在机械臂禁用时要求两只 Pika 均检测到平移或旋转活动；
   不启动定位节点、不显示坐标或设备标识
-- `check_control_graph.py --mode simulation|hardware`：S11 只读审计命令、授权和服务所有者，
-  拒绝跨侧、多发布者及无侧别遗留控制接口
+- `start_left_teleop.sh`：使用 `left_piper` 启动左侧直接遥操作
+- `start_right_teleop.sh`：使用 `right_piper` 启动右侧直接遥操作
+- `start_dual_teleop.sh`：使用两路固定 CAN 同时启动双臂直接遥操作
 
 以下真机运维入口仍为后续阶段预留：
 

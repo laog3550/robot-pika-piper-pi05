@@ -80,7 +80,7 @@ fi
 running_control=$(ps -eo comm=,args= | awk '
   $1 ~ /^(roscore|rosmaster|roslaunch)$/ ||
   ($1 !~ /^(bash|sh|timeout|awk)$/ &&
-   ($0 ~ /piper_ctrl_single_node.py/ || $0 ~ /single_arm_low_speed_acceptance.py/)) {
+   $0 ~ /piper_ctrl_single_node.py/) {
     print
   }
 ')

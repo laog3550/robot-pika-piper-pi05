@@ -16,22 +16,12 @@
 - Pika 串口、定位和触发服务稳定
 - 话题频率、单位、关节顺序和时间戳正确
 
-## 阶段 C：安全故障注入
+## 直接遥操作
 
-- 未使能时不输出运动命令
-- 指令超时后停止并清除旧目标
-- Pika 定位丢失后停止
-- disable/enable 后不会执行上次目标
-- 急停、软件停机与节点退出均符合预期
-
-## 阶段 D：低速真机
-
-- 单关节小角度逐项核对方向和限位
-- 夹爪开合范围与单位核对
-- 组合运动、遥操作和工作空间核对
-- 回零/返回逻辑在可中断条件下验证
-
-任何阶段失败都应停止进入下一阶段。
+- 左右 Pika 话题分别进入对应厂商 teleop/FK/IK 组件
+- 左右 IK 输出分别连接对应 Piper 驱动
+- `left_piper`、`right_piper` 固定 CAN 名称保持不变
+- 左、右、双臂启动入口均能展开
 
 ## 仓库级脚本测试
 
@@ -48,9 +38,5 @@
   launch、无 CAN 发送 API、无命令入口契约测试。
 - `test_pika_localization_checker.sh`：S08 双侧定位频率、有效状态、时间戳、frame 稳定性
   聚合判断和无写入 API 契约测试。
-- `test_single_arm_driver_launch.sh`：S09 左右 launch 展开、必填 side、默认不启动、
-  `auto_enable=false` 和全部驱动接口相对命名/分侧隔离契约测试；不启动驱动节点。
-- `test_safety_filter.sh`：S10 通用过滤状态机的左右离线回放、故障注入及 launch 安全边界；
-  不启动 Piper 驱动，不连接真机命令入口。
-- `test_dual_arm_safety.sh`：S11 双侧协调状态机、闭集 bringup 及撤权→stop→disable 顺序契约。
-- `test_control_graph_checker.sh`：S11 只读 ROS 图所有权规则和旁路拒绝；测试不连接真机。
+- `test_single_arm_driver_launch.sh`：左右驱动 launch 展开和接口隔离测试。
+- `test_direct_teleop.sh`：左右及双臂直接遥操作拓扑和固定 CAN 名称测试。

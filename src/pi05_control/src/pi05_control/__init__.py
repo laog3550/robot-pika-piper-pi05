@@ -1,1 +1,1 @@
-"""PI05 read-only adapters and safety helpers."""
+"""PI05 Piper feedback and driver integration helpers."""

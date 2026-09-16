@@ -5,18 +5,5 @@
 - `piper_readonly_feedback_node.py`：S08 仅接收 SocketCAN 的分侧反馈节点；不导入 SDK、
   不注册控制入口、不发送 CAN 帧
 
-S09 不复制上游 Piper 控制脚本；`launch/s09_single_arm_driver.launch` 仅封装外部 `piper`
-包，并将其所有命令、反馈和服务放入选择侧的内部命名空间。
-
-- `arm_safety_filter_node.py`：S10 通过必填 `side` 为左右臂复用同一过滤、限速、看门狗、
-  故障锁存和状态桥；不调用驱动服务，不发布原始驱动入口
-- `dual_arm_safety_coordinator_node.py`：S11 同时管理两侧授权租约，拥有公开 enable/stop，
-  任一侧故障时撤权并对双侧执行 software stop；禁止自动 disable
-- `single_arm_low_speed_acceptance.py`：S12 分侧、单关节、小步长验收工具。恢复停止状态后
-  重新采集稳定基准；运动成功或失败都只 software stop 并保持使能。机械支撑确认后的
-  disable 是独立子命令，运动路径不会调用；使能和运动会核对本机固件是否属于厂商资料
-  指定的旧版 `piper_sdk + piper_ros/noetic` 路线，并继续受独立事件/现场门禁约束
-- `arm_joint_state_bridge.py`：将指定侧 Piper 反馈关节名适配到对应 URDF，仅用于状态/可视化
-- `dual_arm_safety_coordinator.py`：汇总双侧状态并拥有公开 enable/stop 接口
-
-迁移时必须消除右侧硬编码，以同一实现实例化左右链路，并补齐 package.xml/CMakeLists.txt 依赖和跨侧故障测试。
+`launch/s09_single_arm_driver.launch` 封装外部 `piper` 包，并将命令、反馈和服务放入
+选择侧的命名空间。直接遥操作由 `pi05_left_teleop` 包实例化厂商 FK/IK/teleop 组件。
