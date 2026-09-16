@@ -10,6 +10,11 @@
   <arg name="smoothing_max_acceleration" default="0.50"/>
   <arg name="smoothing_deadband" default="0.0005"/>
   <arg name="smoothing_driver_speed_percent" default="20"/>
+  <arg name="enable_gripper_teleop" default="false"/>
+  <arg name="pika_gripper_device" default="/dev/null"/>
+  <arg name="pika_gripper_topic" default="$(eval '/pi05/pika_input/' + arg('side') + '/gripper')"/>
+  <arg name="piper_gripper_maximum" default="0.07"/>
+  <arg name="gripper_max_velocity" default="0.04"/>
   <arg name="auto_enable" default="true"/>
   <arg name="tool_offset_m" default="0.19"/>
   <arg name="can_port" default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
@@ -19,9 +24,17 @@
       <arg name="start_driver" value="$(arg connect_driver)"/>
       <arg name="publish_business_feedback" value="true"/>
       <arg name="auto_enable" value="$(arg auto_enable)"/>
+      <arg name="safe_gripper_enable" value="$(arg enable_gripper_teleop)"/>
       <arg name="can_port" value="$(arg can_port)"/>
     </include>
     <group ns="$(eval '/' + arg('side') + '_arm/teleop')">
+      <node if="$(arg enable_gripper_teleop)" pkg="pi05_pika_input"
+            type="gripper_input.py" name="pika_gripper_input"
+            required="true" output="screen">
+        <param name="device" value="$(arg pika_gripper_device)"/>
+        <param name="piper_maximum" value="$(arg piper_gripper_maximum)"/>
+        <remap from="gripper_target" to="$(arg pika_gripper_topic)"/>
+      </node>
       <node pkg="pi05_left_teleop" type="component.py" name="fk" args="--role fk --side $(arg side)" required="true" output="screen">
         <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
         <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
@@ -44,8 +57,13 @@
         <param name="driver_speed_percent" value="$(arg smoothing_driver_speed_percent)"/>
         <param name="rate_hz" value="50"/>
         <param name="target_timeout" value="0.25"/>
+        <param name="gripper_enabled" value="$(arg enable_gripper_teleop)"/>
+        <param name="gripper_timeout" value="0.25"/>
+        <param name="gripper_maximum" value="$(arg piper_gripper_maximum)"/>
+        <param name="gripper_max_velocity" value="$(arg gripper_max_velocity)"/>
         <remap from="joint_feedback" to="$(arg feedback_topic)"/>
         <remap from="ik_target" to="$(eval '/' + arg('side') + '_arm/teleop/ik_target_raw')"/>
+        <remap from="gripper_target" to="$(arg pika_gripper_topic)"/>
         <remap from="smoothed_target" to="$(arg command_topic)"/>
       </node>
       <node pkg="pi05_left_teleop" type="component.py" name="teleop" args="--role teleop --side $(arg side)" required="true" output="screen">

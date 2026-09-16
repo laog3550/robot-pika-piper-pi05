@@ -10,6 +10,8 @@
   <arg name="smoothing_max_acceleration" default="0.50"/>
   <arg name="smoothing_deadband" default="0.0005"/>
   <arg name="smoothing_driver_speed_percent" default="20"/>
+  <arg name="enable_gripper_teleop" default="false"/>
+  <arg name="pika_gripper_device" default="/dev/pi05-pika-left"/>
   <include file="$(find pi05_left_teleop)/launch/side_teleop.launch">
     <arg name="feedback_topic" value="$(arg feedback_topic)"/>
     <arg name="command_topic" value="$(arg command_topic)"/>
@@ -19,6 +21,8 @@
     <arg name="smoothing_max_acceleration" value="$(arg smoothing_max_acceleration)"/>
     <arg name="smoothing_deadband" value="$(arg smoothing_deadband)"/>
     <arg name="smoothing_driver_speed_percent" value="$(arg smoothing_driver_speed_percent)"/>
+    <arg name="enable_gripper_teleop" value="$(arg enable_gripper_teleop)"/>
+    <arg name="pika_gripper_device" value="$(arg pika_gripper_device)"/>
     <arg name="side" value="left"/><arg name="start" value="$(arg start)"/>
     <arg name="connect_driver" value="$(arg connect_driver)"/><arg name="auto_enable" value="$(arg auto_enable)"/>
     <arg name="tool_offset_m" value="$(arg tool_offset_m)"/><arg name="can_port" value="$(arg can_port)"/>

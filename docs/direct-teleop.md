@@ -8,7 +8,8 @@
 ## 保留的现场配置
 
 重构不改变 `PI05_*` 环境变量、ROS overlay 路径、串口别名或 USB-CAN 身份绑定。Piper
-驱动默认继续使用 `left_piper` 和 `right_piper`，可通过 launch 的 `can_port` 参数显式覆盖。
+驱动默认继续使用 `left_piper` 和 `right_piper`，可通过单侧 launch 的 `can_port`
+（双臂入口为 `left_can_port`／`right_can_port`）显式覆盖。
 
 ## 启动顺序
 
@@ -31,9 +32,16 @@ scripts/configure_can.sh apply right
    工具默认检查当前 input-only 话题；仅检查一侧时使用 `--side left` 或 `--side right`。
    检查旧厂商话题时显式使用 `--topic-layout vendor`。
    若状态为 inaccurate，先恢复定位，再继续分侧遥操作。
-4. 运行 `scripts/start_left_teleop.sh` 或 `scripts/start_right_teleop.sh` 完成分侧联调。
-5. 两侧分别通过后，退出已有分侧驱动和遥操作，再运行 `scripts/start_dual_teleop.sh`。
-6. 使用 Pika 厂商触发动作开始或停止对应侧遥操作。
+4. 分侧联调优先使用平滑会话入口，它把使能、运行、返回支撑姿态和失能串成一次会话：
+   `scripts/run_smoothed_teleop.sh left --apply`（或 `right`）。按 Enter 结束，或用
+   `--duration 20` 定时结束。需要夹爪时加 `--with-gripper`。
+5. 只做直连（不做自动回位）时，运行 `scripts/start_left_teleop.sh` 或
+   `scripts/start_right_teleop.sh`，然后使用 Pika 厂商触发动作开始或停止该侧遥操作。
+   该入口的 `auto_enable` 默认为 `true`，即驱动启动后自动使能；需要手动使能时显式传
+   `auto_enable:=false`。注意厂商 `/teleop_trigger_*` 响应的 `success` 字段恒为假，
+   判断触发结果要看节点日志的 `start`／`close`。
+6. 两侧分别通过后，退出已有分侧驱动和遥操作，再运行 `scripts/start_dual_teleop.sh`
+   验证双臂入口。
 
 更新已有目标机仓库时，先保存 `config/pi05.env`，执行 `git pull` 和
 `scripts/build_catkin.sh`，再确认该文件仍在且两路 `configure_can.sh check` 均通过。
@@ -88,15 +96,44 @@ scripts/start_right_teleop.sh auto_enable:=false smooth_commands:=true \
   smoothing_driver_speed_percent:=15
 ```
 
-时间常数越大、速度和加速度越低，动作越平滑，但跟手延迟越明显。平滑器只处理
-J1–J6，不发送夹爪目标；输入超过 `0.25 s` 未更新时停止继续发布，恢复后从最新机械臂
-反馈重新起步。它不是运动安全状态机，仍需使用原生 stop／急停。
+时间常数越大、速度和加速度越低，动作越平滑，但跟手延迟越明显。默认只处理
+J1–J6；输入超过 `0.25 s` 未更新时停止继续发布，恢复后从最新机械臂反馈重新起步。
+它不是运动安全状态机，仍需使用原生 stop／急停。
+
+### 夹爪遥操作
+
+平滑会话可增加 `--with-gripper`。该选项先用 `config/pi05.env` 校验对应侧 Pika
+串口身份，再启动只读编码器节点。编码器全行程被映射到 Piper 的 `0–70 mm` 行程，
+经过 `0.04 m/s` 变化率限制后作为 `JointState.position[6]` 与六轴目标一起发送。
+串口输入超过 `0.25 s` 未刷新时停止整组目标输出。
+
+```bash
+scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
+```
+
+`--with-gripper` 只是让会话脚本按 `config/pi05.env` 校验该侧串口，再把下面这些 launch
+参数传给 `side_teleop.launch`；直接使用 launch 时也可以自己传：
+
+| launch 参数 | 默认值 | 作用 |
+|---|---|---|
+| `enable_gripper_teleop` | `false` | 启动 `gripper_input.py` 并让驱动改用 `safe_gripper_piper_driver.py` |
+| `pika_gripper_device` | `/dev/null` | 要只读打开的 Pika 串口设备 |
+| `pika_gripper_topic` | `/pi05/pika_input/{side}/gripper` | 夹爪目标话题 |
+| `piper_gripper_maximum` | `0.07` | 映射后的 Piper 行程上限（m） |
+| `gripper_max_velocity` | `0.04` | 夹爪目标变化率上限（m/s） |
+
+夹爪输入只有在平滑模式下才会被消费：平滑器节点受 `smooth_commands` 控制，不带
+`--with-gripper` 时维持已验收的六关节行为。**不要在非平滑模式单独设
+`enable_gripper_teleop:=true`**——那会换上夹爪模式驱动并启动编码器节点，但没有平滑器
+订阅夹爪话题，夹爪只被保持当前位置。
 
 该功能默认关闭，现有直连行为不变。上线前先分侧使用保守参数验证，再用于双臂。
 
 ## 不接运动驱动的组件联调
 
-有双侧只读反馈时，可使用以下入口验证厂商组件启动和 FK 链路。
+有双侧只读反馈时，可使用以下入口验证厂商组件启动和 FK 链路。反馈来自
+`src/pi05_control/launch/s08_readonly_feedback.launch` 启动的只读节点，它从 SocketCAN
+直接解码并发布 `/{side}_arm/joint_states_raw`，不需要运动驱动。
 先加载 [命令速查](arm-commands.md) 中的 ROS 环境；官方 Piper 模型路径与启动脚本一致。
 
 ```bash

@@ -21,6 +21,8 @@ def parse_args(argv=None):
                         default=Path(__file__).resolve().parents[1] / "config/arm-home.yaml")
     parser.add_argument("--apply", action="store_true",
                         help="authorize enable, teleop, automatic return and disable")
+    parser.add_argument("--with-gripper", action="store_true",
+                        help="read the side's Pika encoder and control the Piper gripper")
     parser.add_argument("--check-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--startup-only", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -37,7 +39,7 @@ def parse_args(argv=None):
     return args
 
 
-def wait_for_topology(rospy, side, timeout=20.0):
+def wait_for_topology(rospy, side, with_gripper=False, timeout=20.0):
     import rosgraph
     suffix = {"left": "l", "right": "r"}[side]
     ik_target = "/%s_arm/teleop/ik_target_raw" % side
@@ -50,6 +52,11 @@ def wait_for_topology(rospy, side, timeout=20.0):
         "/pi05/pika_input/%s/pose" % side: (None,
                                               ["/%s_arm/teleop/teleop" % side]),
     }
+    if with_gripper:
+        gripper_topic = "/pi05/pika_input/%s/gripper" % side
+        expected[gripper_topic] = (
+            ["/%s_arm/teleop/pika_gripper_input" % side],
+            ["/%s_arm/teleop/joint_command_smoother" % side])
     deadline = time.monotonic() + timeout
     last = None
     master = rosgraph.Master("/pi05_%s_session_topology" % suffix)
@@ -151,6 +158,7 @@ def main(argv=None):
     import rospy
     from piper_msgs.srv import Enable
     from sensor_msgs.msg import JointState
+    from std_msgs.msg import Float64
     from std_srvs.srv import SetBool, Trigger
 
     suffix = {"left": "l", "right": "r"}[args.side]
@@ -163,12 +171,15 @@ def main(argv=None):
 
     rospy.init_node("pi05_%s_smoothed_teleop_session" % args.side, anonymous=True)
     try:
-        wait_for_topology(rospy, args.side)
+        wait_for_topology(rospy, args.side, args.with_gripper)
         rospy.wait_for_service(enable_service, timeout=20.0)
         rospy.wait_for_service(reset_service, timeout=20.0)
         rospy.wait_for_service(trigger_service, timeout=20.0)
         rospy.wait_for_service(gate_service, timeout=20.0)
         rospy.wait_for_message(feedback_topic, JointState, timeout=10.0)
+        if args.with_gripper:
+            rospy.wait_for_message(
+                "/pi05/pika_input/%s/gripper" % args.side, Float64, timeout=10.0)
     except Exception as error:
         print("teleop stack is not ready: %s" % error, file=sys.stderr)
         return 3

@@ -2,12 +2,13 @@
 <package format="2">
   <name>pi05_pika_input</name>
   <version>0.1.0</version>
-  <description>Isolated Pika localization input; no arm or serial control.</description>
+  <description>Isolated Pika localization and read-only gripper encoder input.</description>
   <maintainer email="maintainer@example.invalid">PI05 maintainers</maintainer>
   <license>MIT</license>
   <buildtool_depend>catkin</buildtool_depend>
   <depend>rospy</depend>
   <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
   <exec_depend>data_msgs</exec_depend>
   <exec_depend>rosgraph</exec_depend>
   <exec_depend>rosbash</exec_depend>

@@ -60,6 +60,12 @@ rosservice call /right_arm/enable_srv_raw "enable_request: false"
 厂商使能／失能服务同时发送夹爪指令。`enable_response: true` 表示服务判定请求成功，
 仍应结合实际反馈确认状态。
 
+夹爪遥操作模式（`enable_gripper_teleop:=true`）会改用
+`src/pi05_control/scripts/safe_gripper_piper_driver.py`，它的使能回调先读取当前夹爪
+开度并保持该位置，不发送闭合目标；失能时才发送松开指令。该驱动**要求
+`auto_enable:=false`**，否则节点直接报错退出，而它的 `required="true"` 会连带关闭整
+个 launch。因此不要用 `start_*.sh` 的默认 `auto_enable` 搭配这个模式。
+
 ## software stop 与恢复
 
 ```bash
@@ -152,10 +158,37 @@ scripts/run_smoothed_teleop.sh left --apply
 scripts/run_smoothed_teleop.sh right --apply --duration 20
 ```
 
+同时控制 Pika 夹爪与 Piper 夹爪时显式增加 `--with-gripper`：
+
+```bash
+# 右臂，20 秒后自动回支撑初始姿态并失能
+scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
+
+# 左臂；需要 /dev/pi05-pika-left 已按 config/pi05.env 正确绑定
+scripts/run_smoothed_teleop.sh left --apply --with-gripper --duration 20
+```
+
+夹爪模式只读取 Pika 串口，不向 Pika 写入控制数据。Pika 全行程线性映射到 Piper
+`0–0.07 m` 行程，夹爪目标最大变化率为 `0.04 m/s`。串口目标超过 `0.25 s`
+未更新时，平滑器停止向 Piper 发布整组目标。该功能仅通过上述平滑会话入口启用。
+
 默认允许最多 180 秒返回支撑初始姿态；若回位误差连续 5 秒没有改善，会自动按
 `reset → enable` 恢复运动，最多尝试 5 次。若反馈中断、话题拓扑不正确或超时未到位，
 脚本不会把“已回位”当作成功；可能仍使能时会保留驱动节点并显示其 PID 和日志位置，
 供现场检查。正常结束应看到 `Home confirmed`、`arm disabled` 和 `Completed`。
+
+该入口的其它选项：
+
+| 选项 | 默认值 | 作用 |
+|---|---|---|
+| `--duration 秒` | 交互等待 Enter | 定时结束摇操并进入回位流程 |
+| `--home-timeout 秒` | `180` | 回位等待上限，超时视为未到位 |
+| `--home-tolerance rad` | `0.02` | 六轴最大误差的到位判据 |
+| `--stable-seconds 秒` | `1.0` | 达到判据后需保持的时间 |
+| `--startup-only` | 关闭 | 只做启动与拓扑检查：不使能、不发运动命令，检查完直接退出 |
+
+`--startup-only` 适合在不动机器的情况下验证驱动、FK、IK、平滑器、遥操作节点和
+`--with-gripper` 的串口身份是否就绪。
 
 ## 厂商归零服务
 
