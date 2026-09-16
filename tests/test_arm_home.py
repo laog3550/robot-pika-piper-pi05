@@ -34,6 +34,12 @@ class ArmHomeTest(unittest.TestCase):
         self.assertEqual(args.side, "right")
         self.assertEqual(args.duration, 20.0)
 
+    def test_startup_only_does_not_require_interactive_terminal(self):
+        args = session.parse_args(["left", "--apply", "--startup-only"])
+        self.assertEqual(args.side, "left")
+        self.assertTrue(args.startup_only)
+        self.assertIsNone(args.duration)
+
     def test_wrapper_enables_smoothing_and_disables_auto_enable(self):
         text = (ROOT / "scripts/run_smoothed_teleop.sh").read_text(encoding="utf-8")
         self.assertIn("auto_enable:=false smooth_commands:=true", text)

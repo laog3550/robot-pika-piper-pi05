@@ -32,7 +32,7 @@ def parse_args(argv=None):
             parser.error("--%s must be positive and finite" % name.replace("_", "-"))
     if not args.apply:
         parser.error("this command moves hardware; add --apply after checking the workspace")
-    if args.duration is None and not sys.stdin.isatty():
+    if args.duration is None and not args.startup_only and not sys.stdin.isatty():
         parser.error("interactive mode needs a terminal; use --duration for non-interactive use")
     return args
 
