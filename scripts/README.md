@@ -1,6 +1,9 @@
 # 运维脚本
 
-所有脚本支持 `--help`，参数错误或执行失败时返回非零状态码。S04 已实现环境相关入口：
+所有 `.sh` 脚本都接受 `--help`，参数错误或执行失败时返回非零状态码，唯一例外是
+`start_teleop.sh`：它把第一个参数当侧别，`--help` 会被判为非法侧别并退出。直接执行
+部分 `.py` 实现（例如 `check_piper_motor_telemetry.py`）需要先满足其导入依赖，
+见下方“诊断实现”。S04 已实现环境相关入口：
 
 - `bootstrap_ubuntu.sh`：安装 Ubuntu 20.04 与 ROS Noetic apt 基线；默认只显示计划
 - `setup_rosdep.sh`：初始化、更新并按工作区安装 rosdep 依赖；先执行模拟
@@ -33,8 +36,12 @@
   不启动定位节点、不显示坐标或设备标识
 - `publish_arm_home.py <left|right> [--apply]`：读取已确认的共同支撑初始姿态；默认只显示计划，
   `--apply` 向对应原始控制话题发布一次 5% 六关节目标，不使能、解除 stop、失能或控制夹爪
-- `run_smoothed_teleop.sh <left|right> --apply [--duration 秒]`：启动单臂平滑摇操；按 Enter
-  或到达指定时长后关闭摇操，返回已确认的支撑初始姿态，确认到位后失能并关闭本次节点
+- `run_smoothed_teleop.sh <left|right> --apply [选项]`：启动单臂平滑摇操；按 Enter
+  或到达 `--duration 秒` 后关闭摇操，返回已确认的支撑初始姿态，确认到位后失能并关闭
+  本次节点。另有 `--home-timeout 秒`（默认 180）、`--home-tolerance rad`（默认 0.02）、
+  `--stable-seconds 秒`（默认 1.0）和只做启动与拓扑检查的 `--startup-only`。
+  增加 `--with-gripper` 后，会校验并只读对应 Pika 串口，将其编码器映射到 Piper
+  夹爪第七轴；该模式仅用于平滑会话
 - `start_left_teleop.sh`：使用 `left_piper` 启动左侧直接遥操作
 - `start_right_teleop.sh`：使用 `right_piper` 启动右侧直接遥操作
 - `start_dual_teleop.sh`：使用两路固定 CAN 同时启动双臂直接遥操作
@@ -45,6 +52,34 @@
 - `start_pi05.sh`：按安全顺序启动
 - `stop_pi05.sh`：停止命令源、禁用机械臂并退出节点
 - `collect_diagnostics.sh`：采集版本、节点、话题、CAN 错误和日志
+
+## 启动入口
+
+- `start_teleop.sh <left|right|dual> [roslaunch 参数]`：三个 `start_*_teleop.sh` 的实际
+  实现。按顺序加载固定 overlay 与 venv，运行 `check_teleop_start.py` 做 ROS 图冲突检查，
+  再执行 `configure_can.sh check`，最后启动对应 launch。它不会启动 Pika 定位，必须先按
+  [直接遥操作](../docs/direct-teleop.md) 启动 input-only 转发
+- `run_smoothed_teleop.py <left|right> --apply`：`run_smoothed_teleop.sh` 调用的会话
+  控制器，负责拓扑检查、`reset → enable`、触发遥操作、关闭输出、返回支撑姿态并失能。
+  `--check-only` 仅供 `run_smoothed_teleop.sh` 内部预检使用
+- `check_teleop_start.py <left|right|dual>`：只读查询 ROS master，拒绝本侧已有的驱动或
+  遥操作节点，允许对侧命名空间和 `piper_readonly_feedback` 继续运行，并要求目标侧
+  `/pi05/pika_input/<side>/pose` 已有发布者
+
+## 诊断实现
+
+带 `.sh` 包装器的工具由同名 `.py` 实现，包装器只负责加载环境与参数校验，直接调用
+`.py` 时需要自行准备 ROS/venv 环境。没有包装器的两个：
+
+- `check_piper_feedback_decoding.py <left|right>`：同一批真实 CAN 帧分别用项目解码器与
+  厂商 `C_PiperParserV2` 解析并逐帧比对，只接收、不发送
+- `diagnose_pika_tracking.py`、`diagnose_piper_command_feedback.py`：分别输出 Pika 跟踪
+  和命令/反馈相关性的 JSON 诊断，含 `diagnostic_tags`，但没有安全结论能力
+
+`scripts/lib/common.sh` 和 `scripts/lib/device_config.sh` 是被其他脚本 source 的共享库，
+用于日志、`apply` 确认、`config/pi05.env` 白名单解析和双侧身份分离校验，不单独执行。
+部分 `.py` 依赖 `pi05_control` 包或 `piper_sdk`，直接运行前需要设置 `PYTHONPATH` 或
+激活 `.venv`；对应的 `.sh` 包装器已经处理好。
 
 机器唯一参数从 `config/pi05.env` 读取，不写入脚本。环境安装和设备配置均把只读检查
 与 apply 分开；需要 `sudo` 的动作会先打印目标并要求输入 `APPLY`，或要求调用方显式

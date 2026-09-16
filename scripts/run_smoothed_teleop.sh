@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 usage() {
-  echo "usage: $0 <left|right> --apply [--duration SECONDS] [--home-timeout SECONDS]"
+  echo "usage: $0 <left|right> --apply [--with-gripper] [--duration SECONDS] [--home-timeout SECONDS]"
 }
 
 if [[ ${1:-} == -h || ${1:-} == --help ]]; then
@@ -17,6 +17,7 @@ if [[ "$side" != left && "$side" != right ]]; then
 fi
 shift
 startup_only=false
+with_gripper=false
 for argument in "$@"; do
   if [[ "$argument" == -h || "$argument" == --help ]]; then
     usage
@@ -24,6 +25,9 @@ for argument in "$@"; do
   fi
   if [[ "$argument" == --startup-only ]]; then
     startup_only=true
+  fi
+  if [[ "$argument" == --with-gripper ]]; then
+    with_gripper=true
   fi
 done
 
@@ -35,11 +39,23 @@ source /home/mips/robot/pi05-upstream-ws/devel/setup.bash --extend
 source "$repo_root/devel/setup.bash" --extend
 source "$repo_root/.venv/bin/activate"
 
+launch_extra=()
+if [[ "$with_gripper" == true ]]; then
+  # shellcheck source=scripts/lib/device_config.sh
+  source "$script_dir/lib/device_config.sh"
+  pi05_load_device_config "$repo_root/config/pi05.env"
+  pi05_validate_dual_identity_separation
+  pi05_select_serial_config "$side"
+  pi05_validate_serial_config
+  "$script_dir/configure_pika_serial.sh" check "$side"
+  launch_extra+=(enable_gripper_teleop:=true "pika_gripper_device:=$PI05_PIKA_SERIAL_ALIAS")
+fi
+
 python "$script_dir/run_smoothed_teleop.py" "$side" "$@" --check-only
 
 log_file="/tmp/pi05-${side}-smoothed-teleop-$$.log"
 setsid "$script_dir/start_teleop.sh" "$side" \
-  auto_enable:=false smooth_commands:=true >"$log_file" 2>&1 &
+  auto_enable:=false smooth_commands:=true "${launch_extra[@]}" >"$log_file" 2>&1 &
 launch_pid=$!
 
 stop_launch() {

@@ -40,12 +40,16 @@ scripts/bootstrap_ubuntu.sh --apply
 
 ```bash
 mkdir -p ../pi05-upstream-src
-vcs validate < third_party/pi05-upstream.repos
+scripts/check_upstream_manifest.sh
 vcs import ../pi05-upstream-src < third_party/pi05-upstream.repos
 ```
 
-不要递归初始化 `pika_ros` 子模块。`pika_locator` 仍因源码与许可证证据不足而不在清单
-中，S04 不会下载或复制它。
+用 `scripts/check_upstream_manifest.sh` 校验清单，不要用 `vcs validate`：本机
+python3-vcstool 0.3.0 对完整 commit 执行 `vcs validate` 可能抛 `UnboundLocalError`，
+因此它不作为门禁，详见 [上游依赖基线](upstream-dependencies.md)。
+
+不要递归初始化 `pika_ros` 子模块。`pika_locator` 因源码与许可证证据不足不在清单中，
+本项目不下载也不重新分发它；但**运行链路依赖它的预编译产物**，见下方 overlay 说明。
 
 创建 Python 3.8 环境：
 
@@ -90,10 +94,17 @@ scripts/setup_rosdep.sh --apply
 
 ```bash
 source /opt/ros/noetic/setup.bash
+source /home/mips/pika_ros/install/setup.bash
 source /home/mips/robot/pi05-upstream-ws/devel/setup.bash
 source /home/mips/robot/robot-pika-piper-pi05/devel/setup.bash --extend
 source /home/mips/robot/robot-pika-piper-pi05/.venv/bin/activate
 ```
+
+`/home/mips/pika_ros/install` 提供 `data_msgs`、`pika_remote_piper` 和预编译的
+`pika_locator`。Pika 输入链路必须要有 `pika_locator`：`safe_locator.py` 会执行
+`rosrun pika_locator pika_double_locator_node`，`scripts/start_teleop.sh` 也 source 这个
+overlay。它不在 VCS 清单里意味着本项目不复制、不再分发它，不意味着运行时不需要它。
+若目标机没有该 overlay，Pika 定位无法启动，需要先按现场条件准备等价的定位实现。
 
 ## 构建与检查
 

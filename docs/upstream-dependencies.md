@@ -1,6 +1,8 @@
 # S03 上游依赖基线
 
-状态：**S07 已形成排除/替代决策；实机固件与厂商软件路线已核对，S12 真机异常仍待闭环。**
+状态：**S07 已形成排除/替代决策；实机固件与厂商软件路线已核对。** S12 的真机运动异常
+保留为历史诊断事项，已按用户现场复测关闭，不再阻塞当前阶段，见
+[项目进度](project-progress.md)。
 
 盘点日期：2026-09-09。参考工作区为只读的 `/home/mips/pika_ros`。本阶段只记录来源并创建获取清单，不复制上游源码、二进制或许可证正文，也不迁移控制代码。
 
@@ -22,8 +24,8 @@
 | Piper ROS（历史参考） | `PikaAnyArm/piper/piper_ros` | 随 `PikaAnyArm`：`d2b8b84...` | 随参考 `PikaAnyArm` | 内嵌副本没有独立 LICENSE，`piper`/`piper_msgs` package.xml 为 `TODO` | 仅用于行为差异审查；不进入批准部署路径，不复制 |
 | Piper ROS（部署候选） | [agilexrobotics/piper_ros](https://github.com/agilexrobotics/piper_ros)，Noetic 分支 | `ac41fcbcdda598f01b51cf6175ed9a24d0dacadc` | 不使用参考区内嵌副本 | 根 `LICENSE` 为 MIT；部分 package.xml 仍为 `TODO`，`piper_description` 写 BSD | 以根许可证固定官方来源；后续只选择所需包并保留全部适用声明 |
 | `data_msgs` | [agilexrobotics/data_msgs](https://github.com/agilexrobotics/data_msgs) | `868860123c40a0f7dc96984bb313fdc79afbaa8d` | `pika_ros` 子模块同一 SHA | 仓库 `LICENSE` 为 BSD-3-Clause；package.xml 为 `TODO` | 可获取；保留许可证文件，修复元数据前不对外发布副本 |
-| `piper_sdk` | [agilexrobotics/piper_sdk](https://github.com/agilexrobotics/piper_sdk) | `081e7c588e5b79eeaefa67a0469bcc701c81014f`（tag `0.6.1`） | 参考主机未发现可识别安装 | 固定提交 `LICENSE` 和 setup 元数据均为 MIT | 可获取；`S-V1.8-2` 属于厂商指定旧栈范围，真机异常另行阻塞 |
-| `pika_locator` | 参考 `pika_ros/source/install.zip` 中的预编译 catkin 包 | **未知** | package 版本 `0.0.1`；无源码目录或 Git 元数据 | package.xml 声明 MIT，但归档中未找到对应源码与独立 LICENSE | **阻塞：不进入 VCS 清单，不复制/分发** |
+| `piper_sdk` | [agilexrobotics/piper_sdk](https://github.com/agilexrobotics/piper_sdk) | `081e7c588e5b79eeaefa67a0469bcc701c81014f`（tag `0.6.1`） | 参考主机未发现可识别安装 | 固定提交 `LICENSE` 和 setup 元数据均为 MIT | 可获取；`S-V1.8-2` 属于厂商指定旧栈范围 |
+| `pika_locator` | 参考 `pika_ros/source/install.zip` 中的预编译 catkin 包 | **未知** | package 版本 `0.0.1`；无源码目录或 Git 元数据 | package.xml 声明 MIT，但归档中未找到对应源码与独立 LICENSE | **不进入 VCS 清单、不复制/分发**；但当前运行链路依赖它的预编译产物，见下方说明 |
 | `libsurvive` | [cntools/libsurvive](https://github.com/cntools/libsurvive) | `f1e6eddb669320f2a30760f4b42936bdb4306da0` | 参考二进制链路的已知底层项目 | 根 `LICENSE` 为 MIT；不递归获取未审核子模块 | 许可证明确的底层候选；不是 `pika_locator` 的等价 ROS 替换 |
 | `pika_sdk`（调查项） | [agilexrobotics/pika_sdk](https://github.com/agilexrobotics/pika_sdk) | `902b476df86c7f140b98dde6254c5d491e002c6a` | 参考区未使用 | 根 `LICENSE` 是 LGPL-3.0 文本，`setup.py`/classifiers 又声明 MIT | **排除**；上游澄清前不进入 VCS 清单或部署路径 |
 
@@ -140,5 +142,9 @@ done
 - [x] `S-V1.8-2` 已按厂商 2026-07 资料清单选择 `piper_sdk + piper_ros/noetic` 旧栈路线。
 
 许可证与来源已通过“选用明确上游/排除不明确来源”闭环；左右 Piper 固件已经完成现场
-采集并完成软件路线复核，但 S12 运动异常尚未关闭，因此仍不能宣告整套真机依赖可运行。任何被排除组件均不得
-复制进项目。
+采集并完成软件路线复核。任何被排除组件均不得复制进项目。
+
+`pika_locator` 的排除只针对“复制与再分发”：它没有可验证的源码来源，因此不进清单；
+但 Pika 输入链路在运行时会调用它的预编译产物，实际包位于仓库外的
+`/home/mips/pika_ros/install`。部署到新主机时必须另有来源，见
+[环境安装与检查](environment-setup.md) 的 overlay 说明。

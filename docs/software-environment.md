@@ -1,6 +1,9 @@
 # S02 软件环境清单
 
-状态：**需求基线已冻结；PI05 实机版本待采集。**
+状态：**需求基线已冻结；下表为 2026-09-09 盘点快照。** PI05 实机版本已于 2026-09-10
+采集并通过环境检查（`/usr/bin/python3` 3.8.10），依赖版本已由 robotpkg 与 VCS 清单固定，
+详见 [环境安装与检查](environment-setup.md) 和 [上游依赖基线](upstream-dependencies.md)。
+下表“待采集/未固定”的表述保留为盘点时的状态。
 
 ## 支持基线
 
@@ -13,9 +16,9 @@
 | Python | Python 3 (`/usr/bin/python3`) | CMake 缓存与节点 shebang 确认；微版本待采集 |
 | CAN | SocketCAN、`gs_usb`、`iproute2`、`can-utils`、`ethtool` | Piper 辅助脚本的显式依赖；适配器兼容性待现场确认 |
 | Pika 串口节点 | `sensor_tools/serial_gripper_imu` | C++/Boost.Asio；串口 460800、8N1、无流控 |
-| Pika 定位 | `pika_locator/pika_single_locator_node`、libsurvive | 参考 install 空间存在二进制与包描述；源码不在参考区，需补齐可复现来源 |
-| Piper 驱动 | `piper`、`piper_msgs`、`piper_sdk` | ROS 包在 `PikaAnyArm`；Python SDK 版本未由仓库固定 |
-| 遥操作/运动学 | `pika_remote_piper`、NumPy、Pinocchio、CasADi | 源码 import 确认；版本未固定 |
+| Pika 定位 | `pika_locator/pika_double_locator_node`、libsurvive | 参考 install 空间存在二进制与包描述；实际运行的是 double locator（`safe_locator.py` 用 `rosrun pika_locator pika_double_locator_node`）；源码不在参考区，需补齐可复现来源 |
+| Piper 驱动 | `piper`、`piper_msgs`、`piper_sdk` | ROS 包在 `PikaAnyArm`；Python SDK 已固定为 `piper_sdk@081e7c58`（tag 0.6.1） |
+| 遥操作/运动学 | `pika_remote_piper`、NumPy、Pinocchio、CasADi | 源码 import 确认；版本已由 robotpkg 固定（Pinocchio 3.2.0 / CasADi 3.6.7 等） |
 | ROS 运行依赖 | `rospy`、`roscpp`、`sensor_msgs`、`geometry_msgs`、`std_msgs`、`std_srvs`、`tf`、`robot_state_publisher`、`rviz`、`data_msgs` | package/launch/source 交叉确认 |
 | C++ 系统依赖 | Boost.System、jsoncpp | `sensor_tools` CMake 确认 |
 

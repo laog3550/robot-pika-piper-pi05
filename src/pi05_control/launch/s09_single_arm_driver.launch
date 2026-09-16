@@ -4,6 +4,7 @@
   <arg name="start_driver" default="false"/>
   <arg name="publish_business_feedback" default="false"/>
   <arg name="auto_enable" default="false"/>
+  <arg name="safe_gripper_enable" default="false"/>
   <arg name="can_port"
        default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
 
@@ -14,8 +15,8 @@
   -->
   <group ns="$(eval {'left': 'left_arm', 'right': 'right_arm'}[arg('side')])">
     <node if="$(arg start_driver)"
-          pkg="piper"
-          type="piper_ctrl_single_node.py"
+          pkg="$(eval 'pi05_control' if arg('safe_gripper_enable') else 'piper')"
+          type="$(eval 'safe_gripper_piper_driver.py' if arg('safe_gripper_enable') else 'piper_ctrl_single_node.py')"
           name="piper_driver_raw"
           output="screen"
           required="true">
