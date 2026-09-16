@@ -104,8 +104,8 @@ J1–J6；输入超过 `0.25 s` 未更新时停止继续发布，恢复后从最
 
 平滑会话可增加 `--with-gripper`。该选项先用 `config/pi05.env` 校验对应侧 Pika
 串口身份，再启动只读编码器节点。编码器全行程被映射到 Piper 的 `0–70 mm` 行程，
-经过 `0.04 m/s` 变化率限制后作为 `JointState.position[6]` 与六轴目标一起发送。
-串口输入超过 `0.25 s` 未刷新时停止整组目标输出。
+经过 `0.04 m/s` 变化率限制后由独立控制节点调用 Piper 的夹爪服务。串口输入超过
+`0.25 s` 未刷新时只停止夹爪更新，六关节遥操作继续运行。
 
 ```bash
 scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
@@ -116,16 +116,14 @@ scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
 
 | launch 参数 | 默认值 | 作用 |
 |---|---|---|
-| `enable_gripper_teleop` | `false` | 启动 `gripper_input.py` 并让驱动改用 `safe_gripper_piper_driver.py` |
+| `enable_gripper_teleop` | `false` | 启动 `gripper_input.py` 和独立的夹爪服务控制节点 |
 | `pika_gripper_device` | `/dev/null` | 要只读打开的 Pika 串口设备 |
 | `pika_gripper_topic` | `/pi05/pika_input/{side}/gripper` | 夹爪目标话题 |
 | `piper_gripper_maximum` | `0.07` | 映射后的 Piper 行程上限（m） |
 | `gripper_max_velocity` | `0.04` | 夹爪目标变化率上限（m/s） |
 
-夹爪输入只有在平滑模式下才会被消费：平滑器节点受 `smooth_commands` 控制，不带
-`--with-gripper` 时维持已验收的六关节行为。**不要在非平滑模式单独设
-`enable_gripper_teleop:=true`**——那会换上夹爪模式驱动并启动编码器节点，但没有平滑器
-订阅夹爪话题，夹爪只被保持当前位置。
+夹爪和关节使用独立输出接口；`--with-gripper` 仍只由平滑会话入口开放，以便会话脚本
+统一开启和关闭两路输出。不带该选项时维持已验收的六关节行为。
 
 该功能默认关闭，现有直连行为不变。上线前先分侧使用保守参数验证，再用于双臂。
 

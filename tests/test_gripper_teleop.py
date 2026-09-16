@@ -2,6 +2,8 @@
 import importlib.util
 import math
 from pathlib import Path
+import sys
+import types
 import unittest
 
 
@@ -9,7 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/pi05_pika_input/scripts/gripper_input.py"
 spec = importlib.util.spec_from_file_location("gripper_input", SOURCE)
 module = importlib.util.module_from_spec(spec)
+missing_modules = {}
+for dependency in ("fcntl", "termios", "tty"):
+    if dependency not in sys.modules:
+        try:
+            __import__(dependency)
+        except (ImportError, NameError):
+            missing_modules[dependency] = types.ModuleType(dependency)
+sys.modules.update(missing_modules)
 spec.loader.exec_module(module)
+CONTROLLER = ROOT / "src/pi05_left_teleop/scripts/gripper_service_controller.py"
+controller_spec = importlib.util.spec_from_file_location("gripper_controller", CONTROLLER)
+controller = importlib.util.module_from_spec(controller_spec)
+controller_spec.loader.exec_module(controller)
 
 
 class GripperInputTest(unittest.TestCase):
@@ -40,6 +54,19 @@ class GripperInputTest(unittest.TestCase):
         self.assertIn("os.O_RDONLY", text)
         self.assertNotIn("os.write", text)
         self.assertIn("fcntl.LOCK_EX | fcntl.LOCK_NB", text)
+
+    def test_gripper_has_an_independent_rate_limiter_and_service(self):
+        limiter = controller.ScalarRateLimiter(0.04, 0.0, 0.07)
+        limiter.reset(0.02)
+        self.assertAlmostEqual(limiter.step(0.07, 0.1), 0.024)
+        self.assertAlmostEqual(limiter.step(-1.0, 0.1), 0.020)
+        with self.assertRaises(ValueError):
+            limiter.step(math.nan, 0.1)
+        text = CONTROLLER.read_text(encoding="utf-8")
+        self.assertIn('ServiceProxy("gripper_command", Gripper)', text)
+        self.assertIn('Service("~set_enabled", SetBool', text)
+        self.assertIn('Subscriber("joint_feedback", JointState', text)
+        self.assertNotIn('Publisher(', text)
 
 
 if __name__ == "__main__":

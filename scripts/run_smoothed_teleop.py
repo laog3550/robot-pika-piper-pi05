@@ -56,7 +56,7 @@ def wait_for_topology(rospy, side, with_gripper=False, timeout=20.0):
         gripper_topic = "/pi05/pika_input/%s/gripper" % side
         expected[gripper_topic] = (
             ["/%s_arm/teleop/pika_gripper_input" % side],
-            ["/%s_arm/teleop/joint_command_smoother" % side])
+            ["/%s_arm/teleop/gripper_controller" % side])
     deadline = time.monotonic() + timeout
     last = None
     master = rosgraph.Master("/pi05_%s_session_topology" % suffix)
@@ -88,6 +88,27 @@ def reset_then_enable(rospy, reset, enable, context):
     enable_response = enable(True)
     if not enable_response.enable_response:
         raise RuntimeError("driver rejected enable %s" % context)
+
+
+def start_teleop_confirmed(rospy, trigger, status_topic, status_type,
+                           attempts=2, timeout=5.0):
+    """Turn the vendor toggle into a confirmed start operation."""
+    last = None
+    for _attempt in range(attempts):
+        trigger()
+        deadline = time.monotonic() + timeout
+        while not rospy.is_shutdown() and time.monotonic() < deadline:
+            try:
+                last = rospy.wait_for_message(
+                    status_topic, status_type,
+                    timeout=min(0.5, max(0.01, deadline - time.monotonic())))
+            except rospy.ROSException:
+                continue
+            if not last.quit and not last.fail:
+                return
+            if last.quit:
+                break
+    raise RuntimeError("vendor teleop did not report an active session: %r" % last)
 
 
 def wait_for_home(rospy, publisher, JointState, feedback_topic, names, target,
@@ -157,6 +178,7 @@ def main(argv=None):
 
     import rospy
     from piper_msgs.srv import Enable
+    from data_msgs.msg import TeleopStatus
     from sensor_msgs.msg import JointState
     from std_msgs.msg import Float64
     from std_srvs.srv import SetBool, Trigger
@@ -166,6 +188,8 @@ def main(argv=None):
     reset_service = "/%s_arm/reset_srv_raw" % args.side
     trigger_service = "/teleop_trigger_%s" % suffix
     gate_service = "/%s_arm/teleop/joint_command_smoother/set_enabled" % args.side
+    gripper_gate_service = "/%s_arm/teleop/gripper_controller/set_enabled" % args.side
+    status_topic = "/teleop_status_%s" % suffix
     feedback_topic = "/joint_states_single_%s" % suffix
     command_topic = "/%s_arm/joint_ctrl_raw" % args.side
 
@@ -176,6 +200,8 @@ def main(argv=None):
         rospy.wait_for_service(reset_service, timeout=20.0)
         rospy.wait_for_service(trigger_service, timeout=20.0)
         rospy.wait_for_service(gate_service, timeout=20.0)
+        if args.with_gripper:
+            rospy.wait_for_service(gripper_gate_service, timeout=20.0)
         rospy.wait_for_message(feedback_topic, JointState, timeout=10.0)
         if args.with_gripper:
             rospy.wait_for_message(
@@ -188,6 +214,8 @@ def main(argv=None):
     reset = rospy.ServiceProxy(reset_service, Trigger)
     trigger = rospy.ServiceProxy(trigger_service, Trigger)
     set_smoother_enabled = rospy.ServiceProxy(gate_service, SetBool)
+    set_gripper_enabled = (rospy.ServiceProxy(gripper_gate_service, SetBool)
+                           if args.with_gripper else None)
     publisher = rospy.Publisher(command_topic, JointState, queue_size=1)
     deadline = time.monotonic() + 5.0
     while publisher.get_num_connections() == 0 and time.monotonic() < deadline:
@@ -208,7 +236,11 @@ def main(argv=None):
             raise RuntimeError("could not enable smoother output")
         enabled = True
         reset_then_enable(rospy, reset, enable, "before teleop")
-        trigger()
+        if set_gripper_enabled is not None:
+            gripper_response = set_gripper_enabled(True)
+            if not gripper_response.success:
+                raise RuntimeError("could not enable gripper output")
+        start_teleop_confirmed(rospy, trigger, status_topic, TeleopStatus)
         trigger_active = True
         print("%s arm teleop is active with smoothing." % args.side)
         if args.duration is None:
@@ -222,6 +254,14 @@ def main(argv=None):
         failure = error
     finally:
         commands_blocked = False
+        if set_gripper_enabled is not None:
+            try:
+                gripper_response = set_gripper_enabled(False)
+                if not gripper_response.success:
+                    failure = failure or RuntimeError("gripper controller refused to stop")
+            except BaseException as error:
+                failure = failure or RuntimeError(
+                    "could not disable gripper output: %s" % error)
         try:
             gate_response = set_smoother_enabled(False)
             commands_blocked = bool(gate_response.success)

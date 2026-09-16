@@ -77,6 +77,30 @@ class ArmHomeTest(unittest.TestCase):
             "in test")
         self.assertEqual(events, [("reset", None), ("sleep", 1.0), ("enable", True)])
 
+    def test_vendor_toggle_is_retried_until_active_status_is_confirmed(self):
+        statuses = [
+            type("Status", (), {"quit": True, "fail": False})(),
+            type("Status", (), {"quit": False, "fail": False})(),
+        ]
+        calls = []
+
+        class Ros:
+            ROSException = RuntimeError
+
+            @staticmethod
+            def is_shutdown():
+                return False
+
+            @staticmethod
+            def wait_for_message(_topic, _message_type, timeout):
+                self.assertGreater(timeout, 0)
+                return statuses.pop(0)
+
+        session.start_teleop_confirmed(
+            Ros, lambda: calls.append("toggle"), "/teleop_status_r", object)
+        self.assertEqual(calls, ["toggle", "toggle"])
+        self.assertEqual(statuses, [])
+
     def test_home_wait_recovers_after_motion_stalls(self):
         class Clock:
             now = 0.0

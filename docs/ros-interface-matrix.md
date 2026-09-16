@@ -24,10 +24,8 @@
 | `/{side}_arm/pos_cmd_raw` | `piper_msgs/PosCmd` | 驱动保留的笛卡尔命令入口，绕开 IK；不由本项目遥操作链路使用 |
 | `/{side}_arm/enable_flag_raw` | `std_msgs/Bool` | 驱动保留的使能标志话题入口；优先使用 `enable_srv_raw` 服务 |
 
-`joint_ctrl_raw` 的语义沿用厂商约定：`position[0:6]` 为 J1–J6（rad）；
-`position[6]` 存在时是夹爪行程（m），驱动按 `position[6] × 1e6` 下发；
-`velocity` 为空或全零时驱动使用 50% 速度，否则 `velocity[6]` 是速度百分比；
-`effort[6]` 存在时被限制在 `0.5–3` 之间作为夹爪力矩。
+`joint_ctrl_raw` 的项目输出固定为六个关节位置；`velocity[6]` 沿用厂商约定表示全局速度
+百分比。夹爪不再附加到该消息，通过独立服务控制。
 
 ## 反馈与状态
 
@@ -68,10 +66,12 @@
 | `/{side}_arm/go_zero_srv_raw` | 厂商回零接口，六关节全零且固定 50% 速度 |
 | `/{side}_arm/block_arm_raw` | 驱动阻塞接口 |
 | `/{side}_arm/teleop/joint_command_smoother/set_enabled` | `std_srvs/SetBool`：平滑器输出开关。置 false 立即停止发布整组目标并丢弃缓存目标；置 true 后要等新的 IK 目标才恢复发布 |
+| `/{side}_arm/teleop/gripper_controller/set_enabled` | `std_srvs/SetBool`：独立夹爪输出开关，不影响六关节平滑器 |
 
 触发服务 `/teleop_trigger_l`、`/teleop_trigger_r` 由厂商遥操作节点提供，用于开始或
 停止对应侧遥操作。注意厂商 Trigger 回调的响应字段恒为默认 `success=false`，不能用
-它判断触发结果，应以节点日志的 `start`／`close` 为准。
+它判断触发结果。会话脚本等待 `/teleop_status_{s}` 报告 `quit=false, fail=false` 后才认定
+遥操作已经启动；若首次调用实际关闭了旧会话，会再调用一次并重新确认。
 
 ## 命名与 remap 约定
 
@@ -81,8 +81,8 @@
 - 厂商组件虽然用 `rospy.init_node(..., anonymous=True)` 初始化，但 roslaunch 会传
   `__name:=fk|ik|teleop`，rospy 见到 `__name` 就采用它并关闭 anonymous，所以
   `side_teleop.launch` 里的 `name` 生效，节点名是 `/{side}_arm/teleop/{name}`。
-- 平滑器要求 IK 目标在 `0.25 s` 内刷新才继续发布；启用夹爪模式时还要求夹爪输入同样
-  新鲜，否则整组目标（含六个关节）一起停发。
+- 平滑器要求 IK 目标在 `0.25 s` 内刷新才继续发布六关节目标。夹爪控制器独立检查夹爪
+  输入时效，夹爪断流不会停止关节输出。
 
 CAN 映射固定为 `left_piper` 和 `right_piper`；真实设备路径不写入仓库。启动顺序见
 [直接遥操作](direct-teleop.md)，手动命令见 [机械臂命令速查](arm-commands.md)。

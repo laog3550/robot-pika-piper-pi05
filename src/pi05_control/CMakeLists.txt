@@ -17,7 +17,6 @@ catkin_package(
 
 catkin_install_python(PROGRAMS
   scripts/piper_readonly_feedback_node.py
-  scripts/safe_gripper_piper_driver.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

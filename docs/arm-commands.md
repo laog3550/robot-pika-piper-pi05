@@ -60,11 +60,8 @@ rosservice call /right_arm/enable_srv_raw "enable_request: false"
 厂商使能／失能服务同时发送夹爪指令。`enable_response: true` 表示服务判定请求成功，
 仍应结合实际反馈确认状态。
 
-夹爪遥操作模式（`enable_gripper_teleop:=true`）会改用
-`src/pi05_control/scripts/safe_gripper_piper_driver.py`，它的使能回调先读取当前夹爪
-开度并保持该位置，不发送闭合目标；失能时才发送松开指令。该驱动**要求
-`auto_enable:=false`**，否则节点直接报错退出，而它的 `required="true"` 会连带关闭整
-个 launch。因此不要用 `start_*.sh` 的默认 `auto_enable` 搭配这个模式。
+夹爪遥操作模式使用原厂驱动的 `gripper_srv_raw`，不会替换机械臂驱动。平滑会话仍以
+`auto_enable:=false` 启动，由会话脚本明确执行使能并在使能后开放夹爪输出。
 
 ## software stop 与恢复
 
