@@ -2,6 +2,12 @@
   <arg name="left" default="true"/>
   <arg name="right" default="false"/>
   <arg name="start_locator" default="false"/>
+  <!--
+    默认 unverified，safe_locator 会拒绝启动：这样忘记取映射值时是明确失败，
+    而不是静默把左右串侧。正常入口是 scripts/start_pika_input.sh，它先读取 Git
+    忽略的 config/pika-mapping.env 再把实测值传进来。
+    确认方法见 docs/direct-teleop.md 的“左右映射确认”，工具 scripts/check_pika_mapping.py。
+  -->
   <arg name="mapping_order" default="unverified"/>
   <node if="$(arg start_locator)" pkg="pi05_pika_input" type="safe_locator.py"
         name="safe_locator" ns="/pi05/pika_input" output="screen" required="true">

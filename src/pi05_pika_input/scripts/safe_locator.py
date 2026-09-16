@@ -19,7 +19,8 @@ def main():
     import rospy
     rospy.init_node("safe_locator")
     try:
-        left, right = mapping(os.environ, rospy.get_param("~mapping_order", "unverified"))
+        order = rospy.get_param("~mapping_order", "unverified")
+        left, right = mapping(os.environ, order)
         # Do not launch while another locator owns the physical receivers.
         import rosgraph
         master = rosgraph.Master(rospy.get_name())
@@ -31,6 +32,13 @@ def main():
                       "/pi05/pika_input/raw/left/pose", "/pi05/pika_input/raw/right/pose"}
         if any(topic in raw_topics and nodes for topic, nodes in publishers):
             raise ValueError("a locator is already publishing; stop it first")
+        # 只记录映射方向，不记录任何设备 code 值。
+        rospy.loginfo("mapping_order=%s applied; 左手柄来自 %s，右手柄来自 %s",
+                      order,
+                      "pika_L_code" if left == os.environ.get("pika_L_code", "").strip()
+                      else "pika_R_code",
+                      "pika_R_code" if right == os.environ.get("pika_R_code", "").strip()
+                      else "pika_L_code")
         child_name = rospy.get_name() + "_backend"
         for key, value in (("left_hand_code", left), ("right_hand_code", right),
                            ("dist_limit", 0.2), ("angle_limit", 0.2),

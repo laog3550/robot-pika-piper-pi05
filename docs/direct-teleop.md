@@ -13,24 +13,29 @@
 
 ## 启动顺序
 
-首次迁移或 USB-CAN 物理端口发生变化时，先从本机保存的值恢复 Git 忽略的
-`config/pi05.env`，再执行：
-
-```bash
-scripts/configure_can.sh apply left
-scripts/configure_can.sh apply right
-```
-
 日常启动顺序：
 
 1. 按现有部署启动 ROS master。
-2. 加载保存 `pika_L_code`、`pika_R_code` 的本机环境，然后启动双 Pika 输入：
-   `roslaunch pi05_pika_input pika_input_only.launch start_locator:=true mapping_order:=direct left:=true right:=true`。
-   `mapping_order` 是**现场实测值**，不要靠记忆或试错：按下面“左右映射确认”一节实测后
-   固定使用同一个取值。取值错误时两侧位姿话题仍按 120 Hz 发布、`accurate` 也可能为真，
-   但左右会静默对调——表现为操作一只手柄时另一只臂不动。
+2. 加载保存 `pika_L_code`、`pika_R_code` 的本机环境，然后用统一入口启动双 Pika 输入：
+
+   ```bash
+   scripts/start_pika_input.sh              # 读取 config/pika-mapping.env 后启动
+   scripts/start_pika_input.sh --check       # 只校验映射配置，不启动节点
+   ```
+
+   该脚本把左右映射当成显式现场配置：先要求 `pika_L_code`/`pika_R_code` 存在，再读取
+   Git 忽略的 `config/pika-mapping.env` 取得 `PI05_PIKA_MAPPING_ORDER`，最后以
+   `mapping_order:=<实测值>` 启动 launch。缺失或非法时**直接退出码 3**，不会静默串侧
+   （首次使用先 `cp config/pika-mapping.env.example config/pika-mapping.env` 并填实测值）。
+   需要临时覆盖时显式传参，或直接 `roslaunch pi05_pika_input pika_input_only.launch
+   start_locator:=true left:=true right:=true mapping_order:=<取值>` —— 此时 launch 的默认值
+   是 `unverified`，`safe_locator` 会拒绝启动。
+
+   取值错误时两侧位姿话题仍按 120 Hz 发布、`accurate` 也可能为真，但左右会静默对调——
+   表现为操作一只手柄时另一只臂不动。确认方法见下面“左右映射确认”一节。
 3. 运行 `scripts/check_pika_mapping.py --duration 10`，只移动一只手柄，确认该侧 IMU 与
    位姿同步响应、另一侧完全静止。换另一只手柄再测一次，确认左右与操作直觉一致。
+   工具会同时核对“现场配置声明值”与“当前运行实例实际取值”，两者不一致直接判失败。
 4. 确认 `/pi05/pika_input/left/pose` 和 `/pi05/pika_input/right/pose` 正在发布，
    并运行 `scripts/check_pika_localization.sh --side both --duration 10` 检查实际频率与定位有效性。
    工具默认检查当前 input-only 话题；仅检查一侧时使用 `--side left` 或 `--side right`。
@@ -44,6 +49,16 @@ scripts/configure_can.sh apply right
    该入口的 `auto_enable` 默认为 `true`，即驱动启动后自动使能；需要手动使能时显式传
    `auto_enable:=false`。注意厂商 `/teleop_trigger_*` 响应的 `success` 字段恒为假，
    判断触发结果要看节点日志的 `start`／`close`。
+7. 两侧分别通过后，退出已有分侧驱动和遥操作，再运行 `scripts/start_dual_teleop.sh`
+   验证双臂入口。
+
+更新已有目标机仓库时，先保存 `config/pi05.env`，执行 `git pull` 和
+`scripts/build_catkin.sh`，再确认该文件仍在且两路 `configure_can.sh check` 均通过。
+
+左臂运行时可另开终端启动右臂，反之亦然。启动检查只拒绝本侧冲突；双臂入口
+检查两侧。既有 `piper_readonly_feedback` 节点可继续运行；本侧已有运动驱动或
+未明确归属左右命名空间的旧 Piper/teleop 节点仍需先退出。
+检查话题存在只说明有注册发布者，实际输入频率和定位有效性需在联调时确认。
 
 ## 左右映射确认
 
@@ -69,25 +84,23 @@ scripts/check_pika_mapping.py --duration 10
 - IMU 动而位姿不动 → 光学定位没跟上这只手柄，此时遥操作必然表现为“手柄动了臂不动”。
 - 两侧同时动 → 无法区分，请分次只动一只。
 
-实测确认后，把结论写进 Git 忽略的本机文件 `config/pika-mapping.env`，避免下次再试错：
+实测确认后，把结论写进 Git 忽略的本机文件 `config/pika-mapping.env`：
 
 ```bash
-scripts/check_pika_mapping.py --duration 10 --record   # 生成带说明的模板
-# 然后手工填入实测取值：PI05_PIKA_MAPPING_ORDER=direct 或 swapped
+cp config/pika-mapping.env.example config/pika-mapping.env   # 首次
+# 编辑填入实测取值：PI05_PIKA_MAPPING_ORDER=direct 或 swapped
+scripts/start_pika_input.sh --check                          # 校验配置可被正确读取
 ```
 
-该文件只作为现场记录与交接依据；启动 input-only 时仍以命令行显式传入
-`mapping_order:=<实测值>` 为准，不要依赖默认值。
-6. 两侧分别通过后，退出已有分侧驱动和遥操作，再运行 `scripts/start_dual_teleop.sh`
-   验证双臂入口。
+之后统一用 `scripts/start_pika_input.sh` 启动；`scripts/check_pika_mapping.py` 也会核对
+“配置声明值”与“当前运行实例实际取值”是否一致，不一致直接判失败。
 
-更新已有目标机仓库时，先保存 `config/pi05.env`，执行 `git pull` 和
-`scripts/build_catkin.sh`，再确认该文件仍在且两路 `configure_can.sh check` 均通过。
+该文件含机器相关结论，已被 `.gitignore` 忽略，不要提交；仓库里只保留
+`config/pika-mapping.env.example` 模板。
 
-左臂运行时可另开终端启动右臂，反之亦然。启动检查只拒绝本侧冲突；双臂入口
-检查两侧。既有 `piper_readonly_feedback` 节点可继续运行；本侧已有运动驱动或
-未明确归属左右命名空间的旧 Piper/teleop 节点仍需先退出。
-检查话题存在只说明有注册发布者，实际输入频率和定位有效性需在联调时确认。
+> 已实测确认（2026-09-16）：右手柄驱动 `right`、左手柄驱动 `left` 需要
+> `mapping_order:=swapped`。若现场出现“操作一只手柄时另一只臂不动”，先按本节重测，
+> 不要直接去查 IK 或平滑器。
 
 ## 接口
 

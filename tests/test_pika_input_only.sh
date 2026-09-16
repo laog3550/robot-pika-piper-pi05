@@ -22,7 +22,7 @@ for env, order in (({},'direct'),(fake,'unverified'),({'pika_L_code':'same','pik
     else: raise AssertionError('unsafe mapping accepted')
 # Exercise supervisor without launching hardware, checking argv and cleanup.
 ros = types.ModuleType('rospy')
-for name in ('init_node','set_param','delete_param','logerr'):
+for name in ('init_node','set_param','delete_param','logerr','loginfo'):
     setattr(ros,name,Mock())
 ros.get_name = Mock(return_value='/pi05/pika_input/safe_locator')
 ros.get_param = Mock(return_value='swapped')
@@ -41,6 +41,11 @@ with patch.dict(sys.modules, {'rospy':ros,'rosgraph':graph}), patch.dict(module.
     assert '/rosout:=/pi05/pika_input/suppressed_rosout' in argv
     assert ros.set_param.call_args_list[0].args[1] == 'fixture-right'
     assert ros.set_param.call_args_list[1].args[1] == 'fixture-left'
+    # 映射方向必须被记录，但不得记录任何设备 code 值（mock 缺失该方法会在此暴露）
+    assert ros.loginfo.call_count == 1, 'mapping direction must be logged exactly once'
+    logged = ' '.join(str(arg) for arg in ros.loginfo.call_args[0])
+    assert not any(value in logged for value in fake.values()), 'log must not contain handset codes'
+    assert 'swapped' in logged, 'log must contain the applied mapping order'
     ros.delete_param.assert_called_once_with('/pi05/pika_input/safe_locator_backend')
 graph.Master.return_value.getSystemState.return_value = ([('/pika_pose_l',['/existing'])],[],[])
 with patch.dict(sys.modules, {'rospy':ros,'rosgraph':graph}), patch.dict(module.os.environ,fake), patch.object(module.subprocess,'Popen') as spawn:

@@ -38,9 +38,12 @@
   `--apply` 向对应原始控制话题发布一次 5% 六关节目标，不使能、解除 stop、失能或控制夹爪
 - `check_pika_mapping.py --duration 秒`：现场确认左右 Pika 的映射关系。采样窗口内只移动一
   只手柄，工具用 IMU 峰值找出正在被移动的一侧，并检查该侧位姿是否同步响应；位姿不动说明
-  光学定位没跟上。`--record` 生成 Git 忽略的 `config/pika-mapping.env` 记录模板。只订阅
+  光学定位没跟上。同时核对“现场配置声明值”与“当前运行实例实际取值”是否一致。只订阅
   话题，不写设备。映射错误是静默的（两侧照样 120 Hz、照样 accurate），确认方法见
   [直接遥操作](../docs/direct-teleop.md) 的“左右映射确认”一节
+- `start_pika_input.sh [--check]`：双 Pika 输入链路的正常入口。要求 `pika_L_code`/
+  `pika_R_code` 存在，读取 `config/pika-mapping.env` 的 `PI05_PIKA_MAPPING_ORDER`，
+  再以显式 `mapping_order:=` 启动 launch。缺失或非法时退出码 3，不静默串侧
 - `run_smoothed_teleop.sh <left|right> --apply [选项]`：启动单臂平滑摇操；按 Enter
   或到达 `--duration 秒` 后关闭摇操，返回已确认的支撑初始姿态，确认到位后失能并关闭
   本次节点。另有 `--home-timeout 秒`（默认 180）、`--home-tolerance rad`（默认 0.02）、

@@ -52,7 +52,11 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
 - `test_pika_localization_checker.sh`：S08 双侧定位频率、有效状态、时间戳、frame 稳定性
   聚合判断和无写入 API 契约测试。
 - `test_pika_input_only.sh`：input-only 转发的映射选择、argv 不泄露手持 code、已有
-  locator 或 Piper/teleop 节点时拒绝启动。
+  locator 或 Piper/teleop 节点时拒绝启动；同时要求 `safe_locator` 记录映射方向但不得
+  记录设备 code 值。
+- `test_pika_mapping_config.sh`：`start_pika_input.sh` 的映射配置契约——手柄 code 缺失、
+  映射文件缺失、取值非法三种情况都必须以退出码 3 明确失败（不允许静默串侧），合法配置与
+  显式覆盖通过，且仓库模板不得预填具体取值。
 - `test_pika_shutdown_forwarding.sh`：转发节点在 shutdown 竞态下只发布一次且不掩盖故障。
 - `test_single_arm_driver_launch.sh`：左右驱动 launch 展开和接口隔离测试。需要
   `roslaunch`，但不需要 master。

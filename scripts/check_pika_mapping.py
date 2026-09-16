@@ -165,6 +165,21 @@ def master_reachable(timeout=3.0):
         return False
 
 
+def declared_order():
+    """读取现场配置声明的 mapping_order（环境变量，来自 config/pika-mapping.env）。"""
+    import os
+    return os.environ.get("PI05_PIKA_MAPPING_ORDER", "").strip()
+
+
+def running_order():
+    """读取当前 input-only 实际使用的 mapping_order（由 safe_locator 写在参数服务器上）。"""
+    import rospy
+    try:
+        return str(rospy.get_param("/pi05/pika_input/safe_locator/mapping_order", "")).strip()
+    except Exception:
+        return ""
+
+
 def record(moving_side):
     """把确认结果写入本机配置。"""
     from pathlib import Path
@@ -224,10 +239,30 @@ def main(argv=None):
     if status == "ok":
         print()
         print("这只被移动的手柄当前被分配为【%s】侧。" % side)
-        print("请用它和遥操作对照：若它就是你操作 %s 臂时想用的那只，则左右映射正确；"
-              % side)
-        print("若它其实是另一只手的设备，说明 mapping_order 需要取反后重启 input-only。")
-        print("两只手柄各测一次（分开测），即可确认 direct / swapped 哪个取值正确。")
+
+        declared = declared_order()
+        actual = running_order()
+        print("现场配置声明：PI05_PIKA_MAPPING_ORDER=%s" % (declared or "<未设置>"))
+        print("当前运行实例：mapping_order=%s" % (actual or "<读取不到>"))
+        if not declared:
+            print()
+            print("结果：无法核对一致性——现场配置里没有 PI05_PIKA_MAPPING_ORDER。")
+            print("      请先写入 config/pika-mapping.env，并在启动 input-only 前 source 它。")
+            return EXIT_FAILED
+        if declared not in ("direct", "swapped"):
+            print()
+            print("结果：现场配置取值非法（只能是 direct 或 swapped）。")
+            return EXIT_FAILED
+        if actual and actual != declared:
+            print()
+            print("结果：运行实例与现场配置不一致 —— 本次 input-only 用的是 %s，"
+                  "配置写的是 %s。" % (actual, declared))
+            print("      请用配置值重启 input-only 后重测。")
+            return EXIT_FAILED
+        if actual == declared:
+            print()
+            print("结果：运行实例与现场配置一致（%s）。" % declared)
+            print("      请按实测确认 %s 手柄确实对应 %s 侧；换另一只手柄再测一次。" % (side, side))
         if args.record:
             if record(side):
                 print("已写入 %s（当前为空模板，请按实测填入 mapping_order）。" % MAPPING_CONFIG)
