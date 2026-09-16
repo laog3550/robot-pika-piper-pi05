@@ -9,6 +9,10 @@
 /config/pi05.env
 /config/s07-hardware.env
 /config/s12-acceptance.env
+# Backups of the machine config carry the same USB bus-info and serial path
+# values and must never be committed.
+/config/*.env.*
+/config/*.env
 *.local.yaml
 
 # Python

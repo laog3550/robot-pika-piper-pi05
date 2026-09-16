@@ -43,7 +43,19 @@ right Pika pose -> vendor teleop/FK/IK -> /right_arm/joint_ctrl_raw -> right_pip
 /pi05/pika_input/right/pose
 ```
 
-然后选择需要的入口：
+然后选择需要的入口。已完成真机验证的单臂入口是平滑会话，它提供自动返回支撑姿态和
+结束失能：
+
+```bash
+# 左臂 / 右臂：按 Enter 结束，或加 --duration 秒数自动结束
+scripts/run_smoothed_teleop.sh left --apply
+scripts/run_smoothed_teleop.sh right --apply
+
+# 需要同时控制 Pika 夹爪时（会先校验该侧串口身份）
+scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
+```
+
+只启动驱动与直连链路，不含自动回位，需要自行按 `docs/arm-commands.md` 返回并失能：
 
 ```bash
 # 左臂
@@ -56,14 +68,17 @@ scripts/start_right_teleop.sh
 scripts/start_dual_teleop.sh
 ```
 
-启动脚本保持原有 ROS overlay、虚拟环境和官方 Piper 模型路径。它会检查配置好的
-`left_piper`/`right_piper`，随后启动对应驱动并使用厂商默认流程自动使能。可在命令行
-覆盖 `auto_enable:=false`，由 Piper 原生服务手动使能。
+`start_*.sh` 的 `auto_enable` 默认为 `true`，即启动驱动后按厂商默认流程自动使能；
+需要手动使能时显式传 `auto_enable:=false`。平滑会话入口固定以 `auto_enable:=false`
+启动，再由脚本按 `reset → enable` 明确使能。启动脚本保持原有 ROS overlay、虚拟环境
+和官方 Piper 模型路径，并在启动前检查配置好的 `left_piper`/`right_piper`。
 
 Pika 遥操作的开始和停止继续使用厂商 `/teleop_trigger_l`、`/teleop_trigger_r` 服务及
-设备触发动作。左右臂可单独运行，也可通过双臂入口同时运行。
+设备触发动作。注意厂商 Trigger 响应的 `success` 字段恒为假，不能用来判断触发结果，
+应以节点日志的 `start`／`close` 为准。左右臂可单独运行，也可通过双臂入口同时运行。
 
-手动使能、失能、stop／恢复、归零及微动命令见 [机械臂命令速查](docs/arm-commands.md)。
+手动使能、失能、stop／恢复、归零、返回支撑姿态及微动命令见
+[机械臂命令速查](docs/arm-commands.md)。
 
 ## 环境和设备配置
 
@@ -71,9 +86,14 @@ Pika 遥操作的开始和停止继续使用厂商 `/teleop_trigger_l`、`/teleo
 - 设备绑定：`docs/device-configuration.md`
 - 硬件清单：`docs/hardware-inventory.md`
 - 上游来源：`docs/upstream-dependencies.md`
+- 接口与话题：`docs/ros-interface-matrix.md`
+- 阶段状态：`docs/status.md`、`docs/project-progress.md`
+- 文档索引：`docs/README.md`
 - 历史阶段记录：`docs/stages/`
 
-已有环境、CAN、Pika 输入、Piper 反馈和诊断工具均继续保留。真实设备路径、USB bus-info
+启动脚本依赖仓库外的固定 overlay（`~/pika_ros/install`、`~/robot/pi05-upstream-ws/devel`）
+和官方 `piper_description` 模型路径，这些路径写在 `scripts/start_teleop.sh` 里。已有
+环境、CAN、Pika 输入、Piper 反馈和诊断工具均继续保留。真实设备路径、USB bus-info
 和现场配置不得写入仓库。
 
 ## 开发同步
@@ -84,11 +104,11 @@ Pika 遥操作的开始和停止继续使用厂商 `/teleop_trigger_l`、`/teleo
 ## 当前进度
 
 环境、设备绑定、只读诊断和双侧直接遥操作入口已实现；启动检查支持另一侧继续运行。
-当前处于分侧／双臂真机联调阶段，尚无直连重构后的双臂遥操作成功记录。
-用户已自行测试机械臂并确认无异常，历史反馈差异不作为当前阶段阻塞项；
-双侧厂商组件已完成不接驱动的运行与 FK 验证；
-右侧直接及平滑遥操作已完成真机验证；左侧平滑模式和双臂持续遥操作仍待验证。
-详细状态和下一步见 [项目进度](docs/project-progress.md)。
+左右单臂的平滑遥操作已完成真机验证，包括自动返回支撑姿态、到位确认和结束失能；
+双臂同时遥操作尚无成功运行记录。用户已自行测试机械臂并确认无异常，历史反馈差异
+不作为当前阶段阻塞项。Pika 夹爪遥操作只完成右侧启动与拓扑集成测试，夹爪真机动作
+尚未执行。详细状态和下一步见 [部署进度](docs/status.md) 与
+[项目进度](docs/project-progress.md)。
 
 左右臂共同的未使能支撑初始姿态已按用户截图确认为
 `[0, 0, 0, 0, 0.567, 0] rad`，见 [初始姿态配置](config/arm-home.yaml)。
@@ -97,5 +117,6 @@ Pika 遥操作的开始和停止继续使用厂商 `/teleop_trigger_l`、`/teleo
 ## 当前范围
 
 本阶段实现直接／可选平滑遥操作，并已记录共同支撑初始姿态、手动返回入口以及
-单臂会话结束后的自动回位与失能流程。数据采集格式和 π0.5 模型部署将在遥操作
+单臂会话结束后的自动回位与失能流程。可选的 Pika 夹爪遥操作只在平滑会话中通过
+`--with-gripper` 启用，真机动作尚未验证。数据采集格式和 π0.5 模型部署将在遥操作
 真机打通后单独实现。
