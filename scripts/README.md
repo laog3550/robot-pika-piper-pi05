@@ -28,9 +28,13 @@
 - `query_piper_limits.sh check|apply <left|right>`：`check` 不发送帧；`apply` 需显式确认，
   仅通过固定 SDK 的 `0x472`/`0x4AF` 初始化查询读取六轴角度、速度和加速度上限，拒绝缺轴、
   非正速度/加速度或上下限颠倒的响应，不调用使能、运动或参数设置 API
-- `check_pika_localization.sh`：S08 订阅既有左右 Pika 位姿/有效状态，只报告汇总频率和
+- `check_pika_localization.sh`：S08 订阅既有 Pika 位姿/有效状态，支持 `--side left|right|both`，只报告汇总频率和
   有效样本数；`--require-motion` 可在机械臂禁用时要求两只 Pika 均检测到平移或旋转活动；
   不启动定位节点、不显示坐标或设备标识
+- `publish_arm_home.py <left|right> [--apply]`：读取已确认的共同支撑初始姿态；默认只显示计划，
+  `--apply` 向对应原始控制话题发布一次 5% 六关节目标，不使能、解除 stop、失能或控制夹爪
+- `run_smoothed_teleop.sh <left|right> --apply [--duration 秒]`：启动单臂平滑摇操；按 Enter
+  或到达指定时长后关闭摇操，返回已确认的支撑初始姿态，确认到位后失能并关闭本次节点
 - `start_left_teleop.sh`：使用 `left_piper` 启动左侧直接遥操作
 - `start_right_teleop.sh`：使用 `right_piper` 启动右侧直接遥操作
 - `start_dual_teleop.sh`：使用两路固定 CAN 同时启动双臂直接遥操作

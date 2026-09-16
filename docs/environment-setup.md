@@ -81,9 +81,9 @@ scripts/setup_rosdep.sh --apply
 脚本只在 `/etc/ros/rosdep/sources.list.d/20-default.list` 缺失时执行一次
 `sudo rosdep init`，随后运行 Noetic 索引更新。真正安装前先打印 `rosdep --simulate`
 结果。上游 package.xml 存在漏报，rosdep 不能替代 Python 固定清单和 S03 依赖矩阵。
-项目的 `data_msgs` 和 `piper_msgs` 是 VCS 清单固定仓库中的源码依赖，不是 rosdep/apt
-键；脚本只对这两个键使用 `--skip-keys`，避免 rosdep 把源码依赖误报为未知系统包。这不
-会安装或豁免它们，运行依赖这些消息的节点前仍必须从固定 commit 构建对应 overlay。
+项目的 `data_msgs`、`piper_msgs`、`piper_description`、`pika_remote_piper` 和 `piper` 是 VCS 清单固定仓库中的源码依赖，不是 rosdep/apt
+键；脚本只对这些键使用 `--skip-keys`，避免 rosdep 把源码依赖误报为未知系统包。这不
+会安装或豁免它们，运行依赖这些包的节点前仍必须从固定 commit 构建对应 overlay。
 
 本机固定上游工作区位于 `/home/mips/robot/pi05-upstream-ws`。运行需要 `piper`、
 `piper_msgs` 或 `data_msgs` 的节点时按以下顺序叠加，`--extend` 保留上游运行依赖：

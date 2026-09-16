@@ -1,0 +1,10 @@
+# User-confirmed unpowered support pose from the Piper UI, 2026-09-16.
+# Joint positions are in radians. The gripper is intentionally not included.
+# Return to this pose before disabling either arm when a return is requested.
+left_arm_home: &arm_home
+  joint_names: [joint1, joint2, joint3, joint4, joint5, joint6]
+  positions_rad: [0.0, 0.0, 0.0, 0.0, 0.567, 0.0]
+  speed_percent: 5
+
+right_arm_home:
+  <<: *arm_home

@@ -31,10 +31,10 @@ if "$checker" --input-file "$drift" --label test >/dev/null 2>&1; then
 fi
 "$checker" --input-file "$drift" --label test --exclude-joint 3 >/dev/null
 
-if rg -n '[.]send(to)?[(]|sendmsg|os[.]write' "$checker" >/dev/null; then
+if grep -En '[.]send(to)?[(]|sendmsg|os[.]write' "$checker" >/dev/null; then
   printf 'Joint stability checker contains a transmit API\n' >&2
   exit 1
 fi
-rg -n 'recv[(]' "$checker" >/dev/null
+grep -En 'recv[(]' "$checker" >/dev/null
 
 printf 'Piper joint stability checker tests: PASS\n'

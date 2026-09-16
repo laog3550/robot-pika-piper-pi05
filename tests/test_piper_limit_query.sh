@@ -51,7 +51,7 @@ PY
 grep -q 'piper.ConnectPort(piper_init=True, start_thread=True)' "$python_tool"
 grep -q 'apply requires --confirm-query-only' "$shell_tool"
 
-if rg -n 'EnableArm|DisableArm|JointCtrl|GripperCtrl|MotionCtrl|ResetPiper|EmergencyStop|MotorAngleLimitMaxSpdSet|JointMaxAccConfig' \
+if grep -En 'EnableArm|DisableArm|JointCtrl|GripperCtrl|MotionCtrl|ResetPiper|EmergencyStop|MotorAngleLimitMaxSpdSet|JointMaxAccConfig' \
     "$python_tool"; then
   echo 'limit query tool contains a control or parameter-setting API' >&2
   exit 1

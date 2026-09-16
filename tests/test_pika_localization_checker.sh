@@ -18,6 +18,17 @@ spec = importlib.util.spec_from_file_location("check_pika_localization", path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
+assert module.parse_args([]).topic_layout == "input-only"
+assert module.parse_args([]).side == "both"
+assert module.parse_args(["--side", "right"]).side == "right"
+assert module.parse_args(["--topic-layout", "vendor"]).topic_layout == "vendor"
+for side, suffix in (("left", "l"), ("right", "r")):
+    assert module.localization_topics(side, "input-only") == (
+        "/pi05/pika_input/" + side + "/pose",
+        "/pi05/pika_input/" + side + "/localization_status")
+    assert module.localization_topics(side, "vendor") == (
+        "/pika_pose_" + suffix, "/pika_localization_status_" + suffix)
+
 stats = module.LocalizationStats()
 stats.observe_pose((1.0, 2.0, 3.0), (0.0, 0.0, 0.0, 1.0), 1.0, "base")
 stats.observe_pose((1.0, 2.0, 3.0), (0.0, 0.0, 0.0, 1.0), 2.0, "base")
@@ -51,7 +62,7 @@ assert module.ros_master_reachable("http://127.0.0.1:9") is False
 print("Pika localization checker tests: PASS")
 PY
 
-if rg -n 'Publisher|Service|[.]publish[(]|[.]send(all|msg|to)?[(]|open[(]' "${checker}"; then
+if grep -En 'Publisher|Service|[.]publish[(]|[.]send(all|msg|to)?[(]|open[(]' "${checker}"; then
   echo "localization checker contains a write or ROS server API" >&2
   exit 1
 fi
