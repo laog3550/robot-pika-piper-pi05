@@ -210,12 +210,8 @@ def main(argv=None):
               % rosgraph.get_master_uri(), file=sys.stderr)
         return EXIT_ENVIRONMENT
 
-    try:
-        rospy.init_node("pi05_pika_mapping_check", anonymous=True,
-                        disable_signals=True, timeout=10.0)
-    except rospy.exceptions.ROSException as error:
-        print("无法在 10 秒内注册到 master：%s" % error, file=sys.stderr)
-        return EXIT_ENVIRONMENT
+    # rospy.init_node 没有超时参数且会一直重试，可达性已在上一步确认。
+    rospy.init_node("pi05_pika_mapping_check", anonymous=True, disable_signals=True)
     print("采样 %.0f 秒。请【只移动一只手柄】（来回平移并翻转手腕），另一只完全不动。"
           % args.duration)
     print("开始。\n")
