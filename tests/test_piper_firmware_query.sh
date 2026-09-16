@@ -21,7 +21,7 @@ assert not module.FIRMWARE_RE.fullmatch("S-V1.8-")
 PY
 "$shell_tool" --help | grep -q 'check <left|right>'
 
-if rg -n 'EnableArm|JointCtrl|GripperCtrl|MotionCtrl|ResetPiper|EmergencyStop' \
+if grep -En 'EnableArm|JointCtrl|GripperCtrl|MotionCtrl|ResetPiper|EmergencyStop' \
     "$python_tool"; then
   echo 'firmware query tool contains a control API' >&2
   exit 1

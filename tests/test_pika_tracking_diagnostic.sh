@@ -33,7 +33,7 @@ for value in ('0','nan','inf','121'):
     else:raise AssertionError('invalid duration accepted')
 print('Pika tracking diagnostic tests: PASS')
 PY
-if rg -n 'Publisher|Service|[.]publish[(]|[.]send(all|msg|to)?[(]|open[(]|set_param|subprocess|os[.]write' "$repo_root/scripts/diagnose_pika_tracking.py"; then
+if grep -En 'Publisher|Service|[.]publish[(]|[.]send(all|msg|to)?[(]|open[(]|set_param|subprocess|os[.]write' "$repo_root/scripts/diagnose_pika_tracking.py"; then
   printf '%s\n' 'diagnostic contains a write/control API' >&2
   exit 1
 fi

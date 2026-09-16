@@ -79,7 +79,7 @@ if [[ "$check_rosdep" == true ]]; then
   # These are source dependencies pinned in third_party/pi05-upstream.repos,
   # not rosdep/apt keys. This skips only their keys, not their installation.
   rosdep check --from-paths "$workspace/src" --ignore-src --rosdistro noetic \
-    --skip-keys "data_msgs piper_msgs"
+    --skip-keys "data_msgs piper_msgs piper_description pika_remote_piper piper"
 fi
 
 pi05_log "building $workspace with $venv_path/bin/python and $jobs jobs"

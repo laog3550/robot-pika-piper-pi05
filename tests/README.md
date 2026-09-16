@@ -40,3 +40,10 @@
   聚合判断和无写入 API 契约测试。
 - `test_single_arm_driver_launch.sh`：左右驱动 launch 展开和接口隔离测试。
 - `test_direct_teleop.sh`：左右及双臂直接遥操作拓扑和固定 CAN 名称测试。
+
+- `test_piper_feedback_decoding.py`：在 `.venv` 中运行，离线交叉核对固定 SDK 的正负
+  int32 反馈解码与六轴目标编码，不建立 CAN 连接。
+
+- `test_arm_home.py`：校验左右臂使用同一组已确认支撑初始姿态及 5% 返回速度；不连接 ROS 或硬件。
+
+- `test_joint_command_smoother.py`：离线验证关节目标平滑器的速度、加速度、死区和异常输入。

@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Smooth six-joint IK targets before forwarding them to a Piper driver."""
+import math
+import threading
+import time
+
+
+def clamp(value, lower, upper):
+    return max(lower, min(upper, value))
+
+
+class JointCommandSmoother:
+    """First-order target filtering with velocity and acceleration limits."""
+
+    def __init__(self, time_constant, max_velocity, max_acceleration, deadband):
+        values = (time_constant, max_velocity, max_acceleration, deadband)
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("smoother parameters must be finite")
+        if time_constant <= 0 or max_velocity <= 0 or max_acceleration <= 0 or deadband < 0:
+            raise ValueError("invalid smoother parameters")
+        self.time_constant = time_constant
+        self.max_velocity = max_velocity
+        self.max_acceleration = max_acceleration
+        self.deadband = deadband
+        self.position = None
+        self.filtered_target = None
+        self.velocity = [0.0] * 6
+
+    def reset(self, position):
+        if len(position) < 6 or not all(math.isfinite(value) for value in position[:6]):
+            raise ValueError("reset position must contain six finite values")
+        self.position = list(position[:6])
+        self.filtered_target = list(position[:6])
+        self.velocity = [0.0] * 6
+
+    def step(self, target, dt):
+        if self.position is None:
+            raise ValueError("smoother must be reset from feedback before use")
+        if len(target) < 6 or not all(math.isfinite(value) for value in target[:6]):
+            raise ValueError("target must contain six finite values")
+        if not math.isfinite(dt) or dt <= 0:
+            raise ValueError("dt must be positive and finite")
+        dt = min(dt, 0.1)
+        alpha = dt / (self.time_constant + dt)
+        result = []
+        for index in range(6):
+            self.filtered_target[index] += alpha * (
+                target[index] - self.filtered_target[index])
+            error = self.filtered_target[index] - self.position[index]
+            desired_velocity = 0.0 if abs(error) <= self.deadband else clamp(
+                error / self.time_constant, -self.max_velocity, self.max_velocity)
+            max_velocity_change = self.max_acceleration * dt
+            self.velocity[index] += clamp(
+                desired_velocity - self.velocity[index],
+                -max_velocity_change, max_velocity_change)
+            increment = self.velocity[index] * dt
+            if error and increment * error > 0 and abs(increment) > abs(error):
+                increment = error
+                self.velocity[index] = 0.0
+            self.position[index] += increment
+            result.append(self.position[index])
+        return result
+
+
+def main():
+    import rospy
+    from sensor_msgs.msg import JointState
+    from std_srvs.srv import SetBool, SetBoolResponse
+
+    rospy.init_node("joint_command_smoother")
+    rate_hz = float(rospy.get_param("~rate_hz", 50.0))
+    speed_percent = int(rospy.get_param("~driver_speed_percent", 20))
+    timeout = float(rospy.get_param("~target_timeout", 0.25))
+    if not math.isfinite(rate_hz) or rate_hz <= 0:
+        raise ValueError("rate_hz must be positive")
+    if not 1 <= speed_percent <= 100:
+        raise ValueError("driver_speed_percent must be in 1..100")
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("target_timeout must be positive")
+    smoother = JointCommandSmoother(
+        float(rospy.get_param("~time_constant", 0.12)),
+        float(rospy.get_param("~max_velocity", 0.30)),
+        float(rospy.get_param("~max_acceleration", 0.50)),
+        float(rospy.get_param("~deadband", 0.0005)),
+    )
+    lock = threading.Lock()
+    feedback = None
+    target = None
+    target_received = None
+    output_enabled = True
+
+    def feedback_callback(message):
+        nonlocal feedback
+        if len(message.position) >= 6:
+            with lock:
+                feedback = list(message.position[:6])
+
+    def target_callback(message):
+        nonlocal target, target_received
+        if len(message.position) >= 6 and all(
+                math.isfinite(value) for value in message.position[:6]):
+            with lock:
+                target = list(message.position[:6])
+                target_received = time.monotonic()
+
+    def set_enabled_callback(request):
+        nonlocal output_enabled, target, target_received
+        with lock:
+            output_enabled = bool(request.data)
+            if not output_enabled:
+                target = None
+                target_received = None
+        return SetBoolResponse(success=True,
+                               message="smoother output enabled" if output_enabled
+                               else "smoother output disabled")
+
+    publisher = rospy.Publisher("smoothed_target", JointState, queue_size=1)
+    subscribers = [
+        rospy.Subscriber("joint_feedback", JointState, feedback_callback, queue_size=1),
+        rospy.Subscriber("ik_target", JointState, target_callback, queue_size=1),
+    ]
+    output_service = rospy.Service("~set_enabled", SetBool, set_enabled_callback)
+    rate = rospy.Rate(rate_hz)
+    last = time.monotonic()
+    active = False
+    while not rospy.is_shutdown():
+        now = time.monotonic()
+        with lock:
+            current_feedback = None if feedback is None else list(feedback)
+            current_target = None if target is None else list(target)
+            received = target_received
+            enabled = output_enabled
+        fresh = enabled and received is not None and now - received <= timeout
+        if not fresh or current_feedback is None:
+            active = False
+            last = now
+            rate.sleep()
+            continue
+        if not active:
+            smoother.reset(current_feedback)
+            active = True
+            last = now
+        positions = smoother.step(current_target, max(now - last, 1.0 / rate_hz))
+        last = now
+        message = JointState()
+        message.header.stamp = rospy.Time.now()
+        message.name = ["joint%d" % number for number in range(1, 7)]
+        message.position = positions
+        # The pinned vendor driver reads velocity[6] as a global percentage.
+        message.velocity = [0.0] * 6 + [float(speed_percent)]
+        publisher.publish(message)
+        rate.sleep()
+    del subscribers
+    del output_service
+
+
+if __name__ == "__main__":
+    main()

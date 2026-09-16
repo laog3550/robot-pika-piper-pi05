@@ -21,7 +21,7 @@ if roslaunch --nodes "$launch_path" side:=invalid start_driver:=true >/dev/null 
   exit 1
 fi
 
-if rg -n '<(include|node)[^>]+(start_double_piper|start_single_piper)' "$launch_path"; then
+if grep -En '<(include|node)[^>]+(start_double_piper|start_single_piper)' "$launch_path"; then
   printf '%s\n' 'S09 wrapper must not include unsafe upstream launch defaults' >&2
   exit 1
 fi

@@ -2,7 +2,23 @@
   <arg name="start" default="false"/><arg name="connect_driver" default="false"/>
   <arg name="auto_enable" default="true"/><arg name="tool_offset_m" default="0.19"/>
   <arg name="can_port" default="left_piper"/>
+  <arg name="feedback_topic" default="/joint_states_single_l"/>
+  <arg name="command_topic" default="/left_arm/joint_ctrl_raw"/>
+  <arg name="smooth_commands" default="false"/>
+  <arg name="smoothing_time_constant" default="0.12"/>
+  <arg name="smoothing_max_velocity" default="0.30"/>
+  <arg name="smoothing_max_acceleration" default="0.50"/>
+  <arg name="smoothing_deadband" default="0.0005"/>
+  <arg name="smoothing_driver_speed_percent" default="20"/>
   <include file="$(find pi05_left_teleop)/launch/side_teleop.launch">
+    <arg name="feedback_topic" value="$(arg feedback_topic)"/>
+    <arg name="command_topic" value="$(arg command_topic)"/>
+    <arg name="smooth_commands" value="$(arg smooth_commands)"/>
+    <arg name="smoothing_time_constant" value="$(arg smoothing_time_constant)"/>
+    <arg name="smoothing_max_velocity" value="$(arg smoothing_max_velocity)"/>
+    <arg name="smoothing_max_acceleration" value="$(arg smoothing_max_acceleration)"/>
+    <arg name="smoothing_deadband" value="$(arg smoothing_deadband)"/>
+    <arg name="smoothing_driver_speed_percent" value="$(arg smoothing_driver_speed_percent)"/>
     <arg name="side" value="left"/><arg name="start" value="$(arg start)"/>
     <arg name="connect_driver" value="$(arg connect_driver)"/><arg name="auto_enable" value="$(arg auto_enable)"/>
     <arg name="tool_offset_m" value="$(arg tool_offset_m)"/><arg name="can_port" value="$(arg can_port)"/>

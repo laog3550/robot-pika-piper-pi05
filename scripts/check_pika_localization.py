@@ -129,6 +129,11 @@ def parse_args(argv):
             "validity statistics. The checker never starts a locator or prints poses."
         )
     )
+    parser.add_argument("--side", choices=("left", "right", "both"), default="both",
+                        help="check one Pika or both (default: both)")
+    parser.add_argument("--topic-layout", choices=("input-only", "vendor"),
+                        default="input-only",
+                        help="input-only uses the current PI05 relay; vendor uses legacy topics")
     parser.add_argument("--duration", type=positive_float, default=10.0)
     parser.add_argument("--min-pose-rate", type=positive_float, default=30.0)
     parser.add_argument("--min-status-samples", type=positive_int, default=5)
@@ -141,6 +146,14 @@ def parse_args(argv):
         ),
     )
     return parser.parse_args(argv)
+
+
+def localization_topics(side, layout):
+    if layout == "input-only":
+        prefix = "/pi05/pika_input/" + side
+        return prefix + "/pose", prefix + "/localization_status"
+    suffix = {"left": "l", "right": "r"}[side]
+    return "/pika_pose_" + suffix, "/pika_localization_status_" + suffix
 
 
 class TimeoutTransport(xmlrpc.client.Transport):
@@ -187,7 +200,8 @@ def main(argv=None):
         )
         return EXIT_ENVIRONMENT
 
-    sides = {"left": LocalizationStats(), "right": LocalizationStats()}
+    selected_sides = ("left", "right") if args.side == "both" else (args.side,)
+    sides = {side: LocalizationStats() for side in selected_sides}
 
     def pose_callback(side):
         def callback(message):
@@ -214,22 +228,14 @@ def main(argv=None):
 
     try:
         rospy.init_node("pi05_pika_localization_check", anonymous=True, disable_signals=True)
-        subscribers = [
-            rospy.Subscriber("/pika_pose_l", PoseStamped, pose_callback("left"), queue_size=100),
-            rospy.Subscriber("/pika_pose_r", PoseStamped, pose_callback("right"), queue_size=100),
-            rospy.Subscriber(
-                "/pika_localization_status_l",
-                LocalizationStatus,
-                status_callback("left"),
-                queue_size=100,
-            ),
-            rospy.Subscriber(
-                "/pika_localization_status_r",
-                LocalizationStatus,
-                status_callback("right"),
-                queue_size=100,
-            ),
-        ]
+        subscribers = []
+        for side in selected_sides:
+            pose_topic, status_topic = localization_topics(side, args.topic_layout)
+            subscribers.extend([
+                rospy.Subscriber(pose_topic, PoseStamped, pose_callback(side), queue_size=100),
+                rospy.Subscriber(status_topic, LocalizationStatus,
+                                 status_callback(side), queue_size=100),
+            ])
     except Exception as error:
         print("[PI05] ERROR: cannot connect to the ROS graph: %s" % error, file=sys.stderr)
         return EXIT_ENVIRONMENT
@@ -245,7 +251,7 @@ def main(argv=None):
     del subscribers
 
     failed = False
-    for side in ("left", "right"):
+    for side in selected_sides:
         snapshot = sides[side].snapshot()
         pose_rate, failures = evaluate(
             snapshot, elapsed, args.min_pose_rate, args.min_status_samples,
@@ -273,7 +279,7 @@ def main(argv=None):
     if failed:
         print("[PI05] Pika localization check failed", file=sys.stderr)
         return EXIT_FAILED
-    print("[PI05] dual Pika localization check passed")
+    print("[PI05] %s Pika localization check passed" % args.side)
     return 0
 
 

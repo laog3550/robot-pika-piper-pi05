@@ -26,7 +26,7 @@ if PYTHONPATH="$repo_root/src/pi05_control/src" /usr/bin/python3 \
 fi
 
 grep -q 'never' <("$repo_root/scripts/check_piper_motor_telemetry.sh" --help)
-if rg -n 'send\(|sendall|sendmsg' "$checker"; then
+if grep -En 'send\(|sendall|sendmsg' "$checker"; then
   echo 'passive telemetry checker contains a transmit API' >&2
   exit 1
 fi

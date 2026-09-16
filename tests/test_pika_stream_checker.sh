@@ -48,10 +48,10 @@ if "$checker" --input-file "$valid" --duration 0 >/dev/null 2>&1; then
   exit 1
 fi
 
-if rg -n 'os[.]write|[.]write_bytes|[.]write_text' "$checker" >/dev/null; then
+if grep -En 'os[.]write|[.]write_bytes|[.]write_text' "$checker" >/dev/null; then
   printf 'Pika checker contains a device/file write API\n' >&2
   exit 1
 fi
-rg -n 'os[.]O_RDONLY' "$checker" >/dev/null
+grep -En 'os[.]O_RDONLY' "$checker" >/dev/null
 
 printf 'Pika stream checker tests: PASS\n'

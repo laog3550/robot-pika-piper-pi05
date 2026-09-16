@@ -13,20 +13,7 @@ source "$repo_root/.venv/bin/activate"
 official_model=/home/mips/robot/pi05-upstream-src/piper_ros/src/piper_description
 export ROS_PACKAGE_PATH="$official_model:$ROS_PACKAGE_PATH"
 export ROS_MASTER_URI=http://localhost:11311
-PI05_TELEOP_SIDE="$side" python - <<'PY'
-import os
-import rosgraph
-side=os.environ['PI05_TELEOP_SIDE']
-publishers,subscribers,services=rosgraph.Master('/pi05_teleop_start_check').getSystemState()
-nodes={node for _,owners in publishers+subscribers+services for node in owners}
-if any('piper' in node.lower() or 'teleop' in node.lower() for node in nodes):
-    raise SystemExit('Stop existing arm drivers/teleoperation before starting.')
-required=('left','right') if side=='dual' else (side,)
-missing=[item for item in required if not any(
-    topic=='/pi05/pika_input/'+item+'/pose' and owners for topic,owners in publishers)]
-if missing:
-    raise SystemExit('Start Pika input-only first; missing pose: '+','.join(missing))
-PY
+python "$repo_root/scripts/check_teleop_start.py" "$side"
 if [[ "$side" == dual ]]; then
   "$repo_root/scripts/configure_can.sh" check left
   "$repo_root/scripts/configure_can.sh" check right

@@ -2,6 +2,14 @@
   <arg name="side"/>
   <arg name="start" default="false"/>
   <arg name="connect_driver" default="false"/>
+  <arg name="feedback_topic" default="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+  <arg name="command_topic" default="$(eval '/' + arg('side') + '_arm/joint_ctrl_raw')"/>
+  <arg name="smooth_commands" default="false"/>
+  <arg name="smoothing_time_constant" default="0.12"/>
+  <arg name="smoothing_max_velocity" default="0.30"/>
+  <arg name="smoothing_max_acceleration" default="0.50"/>
+  <arg name="smoothing_deadband" default="0.0005"/>
+  <arg name="smoothing_driver_speed_percent" default="20"/>
   <arg name="auto_enable" default="true"/>
   <arg name="tool_offset_m" default="0.19"/>
   <arg name="can_port" default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
@@ -17,18 +25,33 @@
       <node pkg="pi05_left_teleop" type="component.py" name="fk" args="--role fk --side $(arg side)" required="true" output="screen">
         <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
         <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
-        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(arg feedback_topic)"/>
       </node>
       <node pkg="pi05_left_teleop" type="component.py" name="ik" args="--role ik --side $(arg side)" required="true" output="screen">
         <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
         <rosparam param="gripper_xyzrpy" subst_value="true">[$(arg tool_offset_m), 0, 0, 0, 0, 0]</rosparam>
-        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
-        <remap from="$(eval '/joint_states_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/' + arg('side') + '_arm/joint_ctrl_raw')"/>
+        <remap from="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(arg feedback_topic)"/>
+        <remap from="$(eval '/joint_states_' + {'left': 'l', 'right': 'r'}[arg('side')])"
+               to="$(eval '/' + arg('side') + '_arm/teleop/ik_target_raw' if arg('smooth_commands') else arg('command_topic'))"/>
+      </node>
+      <node if="$(arg smooth_commands)" pkg="pi05_left_teleop"
+            type="joint_command_smoother.py" name="joint_command_smoother"
+            required="true" output="screen">
+        <param name="time_constant" value="$(arg smoothing_time_constant)"/>
+        <param name="max_velocity" value="$(arg smoothing_max_velocity)"/>
+        <param name="max_acceleration" value="$(arg smoothing_max_acceleration)"/>
+        <param name="deadband" value="$(arg smoothing_deadband)"/>
+        <param name="driver_speed_percent" value="$(arg smoothing_driver_speed_percent)"/>
+        <param name="rate_hz" value="50"/>
+        <param name="target_timeout" value="0.25"/>
+        <remap from="joint_feedback" to="$(arg feedback_topic)"/>
+        <remap from="ik_target" to="$(eval '/' + arg('side') + '_arm/teleop/ik_target_raw')"/>
+        <remap from="smoothed_target" to="$(arg command_topic)"/>
       </node>
       <node pkg="pi05_left_teleop" type="component.py" name="teleop" args="--role teleop --side $(arg side)" required="true" output="screen">
         <param name="index_name" value="$(eval {'left': '_l', 'right': '_r'}[arg('side')])"/>
         <param name="return_zero_position" type="str" value="False"/>
-        <remap from="$(eval '/joint_states_gripper_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/joint_states_single_' + {'left': 'l', 'right': 'r'}[arg('side')])"/>
+        <remap from="$(eval '/joint_states_gripper_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(arg feedback_topic)"/>
         <remap from="$(eval '/pika_pose_' + {'left': 'l', 'right': 'r'}[arg('side')])" to="$(eval '/pi05/pika_input/' + arg('side') + '/pose')"/>
       </node>
     </group>
