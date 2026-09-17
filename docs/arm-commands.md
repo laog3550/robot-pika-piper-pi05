@@ -168,8 +168,28 @@ scripts/run_smoothed_teleop.sh right --apply --with-gripper --duration 20
 scripts/run_smoothed_teleop.sh left --apply --with-gripper --duration 20
 ```
 
-夹爪模式只读取 Pika 串口，不向 Pika 写入控制数据。Pika 全行程线性映射到 Piper
-`0–0.07 m` 行程，夹爪目标最大变化率为 `0.04 m/s`。串口目标超过 `0.25 s`
+左侧首次运行前安装并核对稳定串口别名（会提示输入 `sudo` 密码）：
+
+```bash
+scripts/configure_pika_serial.sh apply left
+scripts/configure_pika_serial.sh check left
+scripts/check_pika_stream.sh --duration 3 left
+
+# 只检查左侧完整拓扑，不使能机械臂
+scripts/run_smoothed_teleop.sh left --apply --with-gripper --startup-only
+```
+
+位姿映射继续使用现场已确认的 `mapping_order=swapped`：物理左手柄虽然来自历史变量
+`pika_R_code`，但对外必须发布到 `/pi05/pika_input/left/pose`。夹爪编码器不经过该变量
+映射，物理左夹爪固定使用 `/dev/pi05-pika-left`。
+
+会话在使能前要求对应侧 `localization_status.accurate` 连续为真至少 `0.5 s`。若 Pika
+只有夹爪编码器数据、六自由度定位失效，会直接拒绝使能并提示检查追踪器/接收器，避免
+再次出现“夹爪能动但机械臂没有位姿目标”的状态。
+
+夹爪模式只读取 Pika 串口，不向 Pika 写入控制数据。左右 Pika 全行程均线性映射到
+Piper `0–0.10 m`；右侧控制器查询结果为 `max_range_config: 100`，左侧行程由现场确认
+与右侧一致。限幅后直接跟随，不再另加速度限制。串口目标超过 `0.25 s`
 未更新时，平滑器停止向 Piper 发布整组目标。该功能仅通过上述平滑会话入口启用。
 
 默认允许最多 180 秒返回支撑初始姿态；若回位误差连续 5 秒没有改善，会自动按

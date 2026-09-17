@@ -40,6 +40,15 @@ class DirectTeleopTest(unittest.TestCase):
         self.assertIn('default="left_piper"', dual)
         self.assertIn('default="right_piper"', dual)
 
+    def test_both_grippers_use_confirmed_100mm_range(self):
+        left = (LAUNCH / "left_teleop.launch").read_text(encoding="utf-8")
+        right = (LAUNCH / "right_teleop.launch").read_text(encoding="utf-8")
+        dual = (LAUNCH / "dual_teleop.launch").read_text(encoding="utf-8")
+        self.assertIn('name="piper_gripper_maximum" default="0.10"', left)
+        self.assertIn('name="piper_gripper_maximum" default="0.10"', right)
+        self.assertIn('name="left_piper_gripper_maximum" default="0.10"', dual)
+        self.assertIn('name="right_piper_gripper_maximum" default="0.10"', dual)
+
     def test_component_has_no_review_hash_gate(self):
         text = (ROOT / "src" / "pi05_left_teleop" / "scripts" /
                 "component.py").read_text(encoding="utf-8")

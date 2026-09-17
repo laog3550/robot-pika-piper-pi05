@@ -10,7 +10,8 @@
 - 运行与操作：[直接遥操作](direct-teleop.md)、[机械臂命令速查](arm-commands.md)、
   [双臂架构](architecture.md)、[ROS 接口矩阵](ros-interface-matrix.md)
 - 环境与设备：[环境安装与检查](environment-setup.md)、[设备配置](device-configuration.md)、
-  [软件环境清单](software-environment.md)、[硬件清单](hardware-inventory.md)
+  [软件环境清单](software-environment.md)、[硬件清单](hardware-inventory.md)、
+  [相机角色映射](camera-mapping.md)
 - 依赖与安全：[上游依赖基线](upstream-dependencies.md)、[安全约束](safety-constraints.md)
 - 进度：[部署进度](status.md)、[项目进度](project-progress.md)、[后续路线](roadmap.md)
 

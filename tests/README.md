@@ -34,6 +34,9 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
   身份歧义拒绝测试；使用模拟命令，不修改主机设备。
 - `test_s07_hardware.sh`：S07 现场记录字段、双人复核、安全结论、危险文本与疑似敏感
   标识拒绝测试；不访问硬件。
+- `test_cameras_checker.sh`：相机角色映射校验的端口、VID:PID、序列号、同父 hub、USB3
+  速率与左右交叉接线判据，未知配置键和危险文本拒绝，以及输出不泄露完整序列号测试；
+  使用假 sysfs/udev，不接触真实设备。
 - `test_upstream_manifest.sh`：固定 commit、受限清单结构和未知字段拒绝测试。
 - `test_pika_stream_checker.sh`：S08 Pika 完整/截断/空流、参数校验和只读 API 约束测试。
 - `test_piper_can_stream_checker.sh`：S08 Piper CAN 反馈 ID 完整性、控制 ID 拒绝和无发送
@@ -60,8 +63,8 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
 - `test_pika_shutdown_forwarding.sh`：转发节点在 shutdown 竞态下只发布一次且不掩盖故障。
 - `test_single_arm_driver_launch.sh`：左右驱动 launch 展开和接口隔离测试。需要
   `roslaunch`，但不需要 master。
-- `test_direct_teleop.sh`：另外用 `roslaunch` 解析 `right_teleop.launch` 在平滑与直连两种
-  模式下的节点名和 remap，需要 `roslaunch`，不需要 master。
+- `test_direct_teleop.sh`：另外用 `roslaunch` 解析左右单臂入口在平滑、直连和夹爪模式下
+  的节点名、分侧 remap 与 100 mm 参数传递，需要 `roslaunch`，不需要 master。
 
 ## 纯离线 Python 测试
 
@@ -71,12 +74,13 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
 - `test_direct_teleop.py`：launch XML、平滑器接线、固定 CAN 名称和
   `check_teleop_start.py` 冲突判定的离线回归测试，连同 `test_arm_home.py`、
   `test_joint_command_smoother.py`、`test_piper_feedback_decoding.py`、
-  `test_gripper_teleop.py`、`test_safe_gripper_driver.py` 共 31 项。
+  `test_gripper_teleop.py`、`test_safe_gripper_driver.py` 共 41 项。
 - `test_piper_feedback_decoding.py`：在 `.venv` 中运行，离线交叉核对固定 SDK 的正负
   int32 反馈解码与六轴目标编码，不建立 CAN 连接。
 - `test_arm_home.py`：校验左右臂使用同一组已确认支撑初始姿态及 5% 返回速度；不连接 ROS 或硬件。
 - `test_joint_command_smoother.py`：离线验证关节目标平滑器的速度、加速度、死区和异常输入。
-- `test_gripper_teleop.py`：验证 Pika 编码器解析、夹爪量程映射、只读串口约束和输入限速。
-- `test_safe_gripper_driver.py`：验证夹爪模式使能时保持当前夹爪开度，不发送闭合目标。
+- `test_gripper_teleop.py`：验证 Pika 编码器解析、夹爪量程映射和只读串口约束。
+- `test_safe_gripper_driver.py`：验证夹爪模式使能时保持当前开度、J1–J6 位置模式和
+  100 mm 第七轴指令，不发送意外闭合目标。
 - `replay_pika_input_only.py`：隔离 master 回放脚本，需要 `roslaunch` 和一个独立
   ROS master（`localhost:11331`），只用合成位姿，不接触硬件。

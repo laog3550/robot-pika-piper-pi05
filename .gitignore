@@ -12,6 +12,8 @@
 # Backups of the machine config carry the same USB bus-info and serial path
 # values and must never be committed.
 /config/*.env.*
+# Committed templates stay trackable: they must contain empty field values only.
+!/config/*.env.example
 /config/*.env
 *.local.yaml
 

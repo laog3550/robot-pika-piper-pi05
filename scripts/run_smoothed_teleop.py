@@ -90,6 +90,32 @@ def reset_then_enable(rospy, reset, enable, context):
         raise RuntimeError("driver rejected enable %s" % context)
 
 
+def wait_for_accurate_localization(rospy, message_type, topic, timeout=10.0,
+                                   stable_seconds=0.5):
+    """Require fresh, continuously accurate tracking before arm enable."""
+    deadline = time.monotonic() + timeout
+    accurate_since = None
+    while not rospy.is_shutdown() and time.monotonic() < deadline:
+        remaining = deadline - time.monotonic()
+        try:
+            message = rospy.wait_for_message(
+                topic, message_type, timeout=min(1.0, max(remaining, 0.001)))
+        except rospy.ROSException:
+            accurate_since = None
+            continue
+        now = time.monotonic()
+        if message.accurate:
+            accurate_since = accurate_since or now
+            if now - accurate_since >= stable_seconds:
+                return
+        else:
+            accurate_since = None
+        rospy.sleep(0.02)
+    raise RuntimeError(
+        "Pika localization is not continuously accurate on %s; "
+        "check tracker power/receiver and restart Pika input" % topic)
+
+
 def wait_for_home(rospy, publisher, JointState, feedback_topic, names, target,
                   speed, timeout, tolerance, stable_seconds,
                   recover_motion=None, stall_seconds=5.0, max_recoveries=5):
@@ -156,6 +182,7 @@ def main(argv=None):
         return 0
 
     import rospy
+    from data_msgs.msg import LocalizationStatus
     from piper_msgs.srv import Enable
     from sensor_msgs.msg import JointState
     from std_msgs.msg import Float64
@@ -177,6 +204,9 @@ def main(argv=None):
         rospy.wait_for_service(trigger_service, timeout=20.0)
         rospy.wait_for_service(gate_service, timeout=20.0)
         rospy.wait_for_message(feedback_topic, JointState, timeout=10.0)
+        wait_for_accurate_localization(
+            rospy, LocalizationStatus,
+            "/pi05/pika_input/%s/localization_status" % args.side)
         if args.with_gripper:
             rospy.wait_for_message(
                 "/pi05/pika_input/%s/gripper" % args.side, Float64, timeout=10.0)

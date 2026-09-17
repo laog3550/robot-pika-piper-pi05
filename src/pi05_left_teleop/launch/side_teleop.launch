@@ -13,8 +13,7 @@
   <arg name="enable_gripper_teleop" default="false"/>
   <arg name="pika_gripper_device" default="/dev/null"/>
   <arg name="pika_gripper_topic" default="$(eval '/pi05/pika_input/' + arg('side') + '/gripper')"/>
-  <arg name="piper_gripper_maximum" default="0.07"/>
-  <arg name="gripper_max_velocity" default="0.04"/>
+  <arg name="piper_gripper_maximum" default="0.10"/>
   <arg name="auto_enable" default="true"/>
   <arg name="tool_offset_m" default="0.19"/>
   <arg name="can_port" default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
@@ -25,6 +24,7 @@
       <arg name="publish_business_feedback" value="true"/>
       <arg name="auto_enable" value="$(arg auto_enable)"/>
       <arg name="safe_gripper_enable" value="$(arg enable_gripper_teleop)"/>
+      <arg name="gripper_maximum" value="$(arg piper_gripper_maximum)"/>
       <arg name="can_port" value="$(arg can_port)"/>
     </include>
     <group ns="$(eval '/' + arg('side') + '_arm/teleop')">
@@ -60,7 +60,6 @@
         <param name="gripper_enabled" value="$(arg enable_gripper_teleop)"/>
         <param name="gripper_timeout" value="0.25"/>
         <param name="gripper_maximum" value="$(arg piper_gripper_maximum)"/>
-        <param name="gripper_max_velocity" value="$(arg gripper_max_velocity)"/>
         <remap from="joint_feedback" to="$(arg feedback_topic)"/>
         <remap from="ik_target" to="$(eval '/' + arg('side') + '_arm/teleop/ik_target_raw')"/>
         <remap from="gripper_target" to="$(arg pika_gripper_topic)"/>

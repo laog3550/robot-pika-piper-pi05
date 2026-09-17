@@ -65,12 +65,20 @@ stop_launch() {
   fi
 }
 
-# Do not start the ROS session controller until start_teleop.sh has completed
-# its conflict check. Registering the controller earlier makes that check see
-# its own pending session as an existing teleop process.
+# Ctrl-C during startup must not leave the stack behind; after the stack is ready,
+# Ctrl-C belongs to the Python session controller so it can return home first.
+# The controller is only registered after start_teleop.sh finished its conflict
+# check, otherwise that check would see this session as an existing teleop node.
 gate_service="/${side}_arm/teleop/joint_command_smoother/set_enabled"
+interrupted=false
+trap 'interrupted=true' INT
 stack_ready=false
 for _attempt in $(seq 1 200); do
+  if [[ "$interrupted" == true ]]; then
+    stop_launch
+    echo "Interrupted during startup; teleop nodes were stopped." >&2
+    exit 130
+  fi
   if ! kill -0 "$launch_pid" 2>/dev/null; then
     wait "$launch_pid" 2>/dev/null || true
     echo "Teleop stack exited during startup. Launch log: $log_file" >&2
@@ -115,5 +123,7 @@ if ((session_status < 4)); then
 fi
 
 echo "Session did not complete safely; teleop nodes are left running (PID $launch_pid)." >&2
-echo "Inspect the arm before stopping them. Launch log: $log_file" >&2
+echo "The arm may still be enabled. Inspect it in place first, then stop the stack with:" >&2
+echo "  scripts/stop_teleop.sh $side" >&2
+echo "Launch log: $log_file" >&2
 exit "$session_status"

@@ -77,6 +77,41 @@ class ArmHomeTest(unittest.TestCase):
             "in test")
         self.assertEqual(events, [("reset", None), ("sleep", 1.0), ("enable", True)])
 
+    def test_session_requires_stable_accurate_pika_localization(self):
+        class Clock:
+            now = 0.0
+
+            def monotonic(self):
+                return self.now
+
+        clock = Clock()
+        samples = iter([False, True, False, True, True, True, True])
+
+        class Ros:
+            ROSException = RuntimeError
+
+            @staticmethod
+            def is_shutdown():
+                return False
+
+            @staticmethod
+            def wait_for_message(_topic, _message_type, timeout):
+                del timeout
+                return type("Status", (), {"accurate": next(samples)})()
+
+            @staticmethod
+            def sleep(duration):
+                clock.now += max(duration, 0.1)
+
+        original_monotonic = session.time.monotonic
+        session.time.monotonic = clock.monotonic
+        try:
+            session.wait_for_accurate_localization(
+                Ros, object, "/status", timeout=2.0, stable_seconds=0.2)
+        finally:
+            session.time.monotonic = original_monotonic
+        self.assertGreaterEqual(clock.now, 0.4)
+
     def test_home_wait_recovers_after_motion_stalls(self):
         class Clock:
             now = 0.0

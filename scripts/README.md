@@ -13,6 +13,8 @@
   与 venv 兼容的非 Debian Python 安装布局
 - `check_environment.sh`：只读检查操作系统、apt、ROS、rosdep、Python 和工作区
 - `discover_devices.sh`：只读列出 CAN 与 Pika 串口候选，不查询设备序列号
+- `check_cameras.sh`：只读复核左右腕部 Dabai DC1 与顶部 RealSense 的角色映射（物理端口、
+  VID:PID、序列号、同父 hub、USB3 速率）；`--discover` 列出在线候选相机，序列号只显示脱敏值
 - `configure_can.sh check|apply <left|right>`：分侧按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps
 - `configure_pika_serial.sh check|apply <left|right>`：分侧按唯一物理路径和 VID:PID 安装 Pika 串口别名
 - `check_s07_hardware.sh`：只读校验 Git 忽略的 S07 双侧硬件现场记录，不访问设备

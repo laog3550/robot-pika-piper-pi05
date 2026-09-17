@@ -29,17 +29,41 @@ def pika_distance(angle):
     return 2.0 * (linkage_width(angle) - linkage_width(0.0))
 
 
-def piper_target(angle, maximum=0.07):
+def piper_target(angle, maximum=0.10):
     """Scale the full Pika travel to the configured Piper gripper travel."""
-    if not math.isfinite(maximum) or maximum <= 0 or maximum > 0.08:
-        raise ValueError("Piper gripper maximum must be in (0, 0.08]")
+    if not math.isfinite(maximum) or maximum <= 0 or maximum > 0.10:
+        raise ValueError("Piper gripper maximum must be in (0, 0.10]")
     return max(0.0, min(maximum, pika_distance(angle) / PIKA_MAX_DISTANCE * maximum))
 
 
 class FrameParser:
     def __init__(self):
         self.buffer = ""
-        self.decoder = json.JSONDecoder()
+
+    @staticmethod
+    def object_end(value):
+        """Return the end of the first brace-delimited object, if complete."""
+        depth = 0
+        in_string = False
+        escaped = False
+        for index, character in enumerate(value):
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif character == "\\":
+                    escaped = True
+                elif character == '"':
+                    in_string = False
+                continue
+            if character == '"':
+                in_string = True
+            elif character == "{":
+                depth += 1
+            elif character == "}":
+                depth -= 1
+                if depth == 0:
+                    return index + 1
+        return None
 
     def feed(self, chunk):
         self.buffer += chunk.decode("ascii", errors="ignore")
@@ -51,13 +75,19 @@ class FrameParser:
                 break
             if start:
                 self.buffer = self.buffer[start:]
-            try:
-                value, end = self.decoder.raw_decode(self.buffer)
-            except json.JSONDecodeError:
+            end = self.object_end(self.buffer)
+            if end is None:
                 if len(self.buffer) > 8192:
                     self.buffer = self.buffer[-4096:]
                 break
+            frame = self.buffer[:end]
             self.buffer = self.buffer[end:]
+            try:
+                value = json.loads(frame)
+            except json.JSONDecodeError:
+                # A complete but damaged frame must not permanently block all
+                # valid frames that follow it on the serial stream.
+                continue
             sensor = value.get("AS5047") if isinstance(value, dict) else None
             if isinstance(sensor, dict) and "error" not in sensor:
                 try:
@@ -88,7 +118,7 @@ def main():
 
     rospy.init_node("pika_gripper_input")
     device = rospy.get_param("~device")
-    maximum = float(rospy.get_param("~piper_maximum", 0.07))
+    maximum = float(rospy.get_param("~piper_maximum", 0.10))
     resolved = os.path.realpath(device)
     if not resolved.startswith("/dev/") or not stat.S_ISCHR(os.stat(resolved).st_mode):
         raise ValueError("Pika device must resolve to a character device below /dev")

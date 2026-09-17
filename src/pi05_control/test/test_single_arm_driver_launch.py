@@ -21,9 +21,11 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
         self.assertEqual(self.args["start_driver"].get("default"), "false")
         self.assertEqual(
             set(self.args), {"side", "start_driver", "publish_business_feedback",
-                             "auto_enable", "safe_gripper_enable", "can_port"})
+                             "auto_enable", "safe_gripper_enable", "gripper_maximum",
+                             "can_port"})
         self.assertEqual(self.args["publish_business_feedback"].get("default"), "false")
         self.assertEqual(self.args["auto_enable"].get("default"), "false")
+        self.assertEqual(self.args["gripper_maximum"].get("default"), "0.10")
         self.assertIn("left_piper", self.args["can_port"].get("default"))
         self.assertIn("right_piper", self.args["can_port"].get("default"))
         namespace = self.group.attrib["ns"]
@@ -40,6 +42,7 @@ class SingleArmDriverLaunchTest(unittest.TestCase):
         params = {item.attrib["name"]: item.attrib["value"] for item in self.node.findall("param")}
         self.assertEqual(params["can_port"], "$(arg can_port)")
         self.assertEqual(params["auto_enable"], "$(arg auto_enable)")
+        self.assertEqual(params["gripper_maximum"], "$(arg gripper_maximum)")
         self.assertNotIn("hold_position_on_enable", params)
 
     def test_every_driver_interface_is_relative_and_remapped(self):

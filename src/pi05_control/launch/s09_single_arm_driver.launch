@@ -5,6 +5,7 @@
   <arg name="publish_business_feedback" default="false"/>
   <arg name="auto_enable" default="false"/>
   <arg name="safe_gripper_enable" default="false"/>
+  <arg name="gripper_maximum" default="0.10"/>
   <arg name="can_port"
        default="$(eval {'left': 'left_piper', 'right': 'right_piper'}[arg('side')])"/>
 
@@ -25,6 +26,7 @@
       <param name="auto_enable" value="$(arg auto_enable)"/>
       <param name="gripper_exist" value="true"/>
       <param name="gripper_val_mutiple" value="1"/>
+      <param name="gripper_maximum" value="$(arg gripper_maximum)"/>
 
       <remap from="joint_ctrl_single" to="joint_ctrl_raw"/>
       <remap from="pos_cmd" to="pos_cmd_raw"/>

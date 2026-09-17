@@ -50,13 +50,12 @@ class JointCommandSmootherTest(unittest.TestCase):
         self.assertIn('rospy.Service("~set_enabled", SetBool', text)
         self.assertIn("fresh = enabled and", text)
 
-    def test_gripper_rate_limiter_bounds_position_and_speed(self):
-        limiter = module.ScalarRateLimiter(0.04, 0.0, 0.07)
-        limiter.reset(0.02)
-        self.assertAlmostEqual(limiter.step(0.07, 0.1), 0.024)
-        self.assertAlmostEqual(limiter.step(-1.0, 0.1), 0.020)
-        with self.assertRaises(ValueError):
-            limiter.step(math.nan, 0.1)
+    def test_gripper_target_is_appended_without_rate_limit(self):
+        text = (ROOT / "src/pi05_left_teleop/scripts/joint_command_smoother.py").read_text(
+            encoding="utf-8")
+        self.assertIn("positions.append(current_gripper_target)", text)
+        self.assertNotIn("ScalarRateLimiter", text)
+        self.assertNotIn("gripper_max_velocity", text)
 
 
 if __name__ == "__main__":
