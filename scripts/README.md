@@ -41,7 +41,7 @@
   本次节点。另有 `--home-timeout 秒`（默认 180）、`--home-tolerance rad`（默认 0.02）、
   `--stable-seconds 秒`（默认 1.0）和只做启动与拓扑检查的 `--startup-only`。
   增加 `--with-gripper` 后，会校验并只读对应 Pika 串口，将其编码器映射到 Piper
-  夹爪第七轴；该模式仅用于平滑会话
+  独立夹爪服务；该模式仅用于平滑会话
 - `start_left_teleop.sh`：使用 `left_piper` 启动左侧直接遥操作
 - `start_right_teleop.sh`：使用 `right_piper` 启动右侧直接遥操作
 - `start_dual_teleop.sh`：使用两路固定 CAN 同时启动双臂直接遥操作

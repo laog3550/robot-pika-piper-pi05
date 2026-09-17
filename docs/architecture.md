@@ -11,15 +11,13 @@ Pika Right ─► FK/teleop/IK ─► /right_arm/joint_ctrl_raw ─► right_pip
 平滑模式在同一链路中间插入平滑器，并可选择把 Pika 夹爪编码器接到 Piper 夹爪：
 
 ```text
-Pika pose ─► teleop ─► IK ─► <side>_arm/teleop/ik_target_raw ─┐
-Pika 夹爪编码器 ─► /pi05/pika_input/<side>/gripper ───────────┤
-                                                              ▼
-                             joint_command_smoother ─► <side>_arm/joint_ctrl_raw
+Pika pose ─► teleop ─► IK ─► joint_command_smoother ─► <side>_arm/joint_ctrl_raw
+Pika 夹爪编码器 ─► gripper_service_controller ─► <side>_arm/gripper_srv_raw
 ```
 
-平滑器是唯一的关节目标发布者，输出 50 Hz、低通滤波并限制速度与加速度；启用夹爪时
-把夹爪目标作为第七轴一并发布，任一输入超过 `0.25 s` 未刷新就停止整组输出。两种模式
-由 `side_teleop.launch` 的 `smooth_commands` 参数选择，默认直连。
+平滑器只处理六个关节，输出 50 Hz、低通滤波并限制速度与加速度。夹爪拥有独立节点、
+输出开关和输入超时，通过厂商夹爪服务下发；夹爪断流不会停止关节输出。两种关节模式由
+`side_teleop.launch` 的 `smooth_commands` 参数选择，默认直连。
 
 `left_piper`、`right_piper` 是目标机既有 USB-CAN 固定别名。Pika 串口、CAN 身份和其余机器
 参数由目标机的 `config/pi05.env` 与 `PI05_*` 环境变量提供，仓库不写死真实端口；SteamVR
@@ -34,8 +32,7 @@ FK 与 IK 使用 `tool_offset_m`（默认 `0.19` m）作为 `gripper_xyzrpy` 的
 - `side_teleop.launch`：通用单侧实现，两种模式共用。
 - `left_teleop.launch`、`right_teleop.launch`：分侧兼容入口。
 - `dual_teleop.launch`：同时启动左右遥操作。
-- `s09_single_arm_driver.launch`：分侧封装厂商 Piper 驱动，`safe_gripper_enable`
-  为真时改用夹爪模式驱动。
+- `s09_single_arm_driver.launch`：分侧封装厂商 Piper 驱动。
 - `scripts/start_teleop.sh left|right|dual`：目标机统一入口。
 - `scripts/run_smoothed_teleop.sh <left|right> --apply`：单臂平滑会话入口，负责启动、
   运行期间的门控、结束时返回支撑姿态并失能。

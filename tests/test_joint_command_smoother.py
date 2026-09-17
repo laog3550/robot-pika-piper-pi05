@@ -50,14 +50,5 @@ class JointCommandSmootherTest(unittest.TestCase):
         self.assertIn('rospy.Service("~set_enabled", SetBool', text)
         self.assertIn("fresh = enabled and", text)
 
-    def test_gripper_rate_limiter_bounds_position_and_speed(self):
-        limiter = module.ScalarRateLimiter(0.04, 0.0, 0.07)
-        limiter.reset(0.02)
-        self.assertAlmostEqual(limiter.step(0.07, 0.1), 0.024)
-        self.assertAlmostEqual(limiter.step(-1.0, 0.1), 0.020)
-        with self.assertRaises(ValueError):
-            limiter.step(math.nan, 0.1)
-
-
 if __name__ == "__main__":
     unittest.main()

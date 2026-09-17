@@ -18,9 +18,10 @@ class DirectTeleopTest(unittest.TestCase):
     def test_side_launch_supports_direct_and_smoothed_commands(self):
         text = (LAUNCH / "side_teleop.launch").read_text(encoding="utf-8")
         self.assertIn("_arm/joint_ctrl_raw", text)
-        self.assertEqual(text.count('to="$(arg feedback_topic)"'), 4)
+        self.assertEqual(text.count('to="$(arg feedback_topic)"'), 5)
         self.assertIn("joint_command_smoother.py", text)
         self.assertIn("gripper_input.py", text)
+        self.assertIn("gripper_service_controller.py", text)
         self.assertIn("enable_gripper_teleop", text)
         self.assertIn("gripper_target", text)
         self.assertIn("ik_target_raw", text)
@@ -30,6 +31,10 @@ class DirectTeleopTest(unittest.TestCase):
         self.assertNotIn("safety_filter", text)
         self.assertNotIn("control_authorized", text)
         self.assertNotIn("supervisor.py", text)
+        smoother = (ROOT / "src" / "pi05_left_teleop" / "scripts" /
+                    "joint_command_smoother.py").read_text(encoding="utf-8")
+        self.assertNotIn("gripper_target", smoother)
+        self.assertNotIn("ScalarRateLimiter", smoother)
 
     def test_compatibility_entrypoints_keep_fixed_can_names(self):
         left = (LAUNCH / "left_teleop.launch").read_text(encoding="utf-8")
