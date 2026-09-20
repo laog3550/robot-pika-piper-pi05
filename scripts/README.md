@@ -15,6 +15,8 @@
 - `discover_devices.sh`：只读列出 CAN 与 Pika 串口候选，不查询设备序列号
 - `check_cameras.sh`：只读复核左右腕部 Dabai DC1 与顶部 RealSense 的角色映射（物理端口、
   VID:PID、序列号、同父 hub、USB3 速率）；`--discover` 列出在线候选相机，序列号只显示脱敏值
+- `restore_wrist_uvc.sh <left|right> --apply`：严格核对已配置腕部的 USB 端口、VID:PID、
+  序列号和占用状态后，将 Dabai 彩色 interface 重新绑定到 `uvcvideo`；需要 sudo
 - `configure_can.sh check|apply <left|right>`：分侧按唯一 `gs_usb + bus-info` 绑定名称并配置 1 Mbps
 - `configure_pika_serial.sh check|apply <left|right>`：分侧按唯一物理路径和 VID:PID 安装 Pika 串口别名
 - `check_s07_hardware.sh`：只读校验 Git 忽略的 S07 双侧硬件现场记录，不访问设备
@@ -72,6 +74,17 @@
 - `run_smoothed_teleop.py <left|right> --apply`：`run_smoothed_teleop.sh` 调用的会话
   控制器，负责拓扑检查、`reset → enable`、触发遥操作、关闭输出、返回支撑姿态并失能。
   `--check-only` 仅供 `run_smoothed_teleop.sh` 内部预检使用
+- `run_data_collection.sh --dataset-name NAME --duration 秒 --apply`：启动一次后连续采集
+  双臂 episode；计时结束默认成功，`F` 只锁定失败分类并继续到相同时限；随后仍保持录制，
+  直到自动回支撑初始姿态并稳定到位才关闭
+  成功 episode。单窗口可编辑任务/时长，预览三路 RGB，显示双臂 J2/J3 和设备健康状态，
+  并提供按钮与快捷键；回位完成后双臂在 episode 之间保持使能，操作员按 `E` 才失能；
+  UVC 缺失时保留界面并允许按 `F5` 重试。双臂 14 维状态/action、
+  原始 bag 和 LeRobot v3 输出见[数据采集说明](../docs/data-collection.md)。先用
+  `--startup-only` 打开禁止运动的可视化预检界面；启动前也会拒绝被旧会话锁定的两路
+  Pika 串口，避免 required 夹爪节点启动后崩溃并带停整个 roslaunch
+- `export_lerobot_episode.py`：由采集进程在隔离的 Python 3.10/LeRobot 0.4.2 环境中调用，
+  只接受已确认回位的成功原始 episode，也可用于重试失败的后台转换
 - `check_teleop_start.py <left|right|dual>`：只读查询 ROS master，拒绝本侧已有的驱动或
   遥操作节点，允许对侧命名空间和 `piper_readonly_feedback` 继续运行，并要求目标侧
   `/pi05/pika_input/<side>/pose` 已有发布者

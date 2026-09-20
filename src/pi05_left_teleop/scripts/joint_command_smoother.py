@@ -70,7 +70,7 @@ def main():
 
     rospy.init_node("joint_command_smoother")
     rate_hz = float(rospy.get_param("~rate_hz", 50.0))
-    speed_percent = int(rospy.get_param("~driver_speed_percent", 20))
+    speed_percent = int(rospy.get_param("~driver_speed_percent", 30))
     timeout = float(rospy.get_param("~target_timeout", 0.25))
     gripper_enabled = bool(rospy.get_param("~gripper_enabled", False))
     gripper_timeout = float(rospy.get_param("~gripper_timeout", 0.25))
@@ -85,8 +85,8 @@ def main():
         raise ValueError("gripper_timeout must be positive")
     smoother = JointCommandSmoother(
         float(rospy.get_param("~time_constant", 0.12)),
-        float(rospy.get_param("~max_velocity", 0.30)),
-        float(rospy.get_param("~max_acceleration", 0.50)),
+        float(rospy.get_param("~max_velocity", 0.45)),
+        float(rospy.get_param("~max_acceleration", 0.75)),
         float(rospy.get_param("~deadband", 0.0005)),
     )
     lock = threading.Lock()

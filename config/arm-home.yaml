@@ -4,7 +4,9 @@
 left_arm_home: &arm_home
   joint_names: [joint1, joint2, joint3, joint4, joint5, joint6]
   positions_rad: [0.0, 0.0, 0.0, 0.0, 0.567, 0.0]
-  speed_percent: 5
+  # Piper accepts an integer percentage; 8% is the nearest supported value to
+  # 5% * 1.5 = 7.5%.
+  speed_percent: 8
 
 right_arm_home:
   <<: *arm_home

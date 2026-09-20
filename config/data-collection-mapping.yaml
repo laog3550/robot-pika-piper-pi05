@@ -1,0 +1,67 @@
+schema_version: 1
+
+# This file is the committed, non-secret semantic mapping. Machine-specific
+# serial numbers and USB ports remain in the ignored config/cameras.env.
+cameras:
+  left_wrist:
+    observation_key: observation.images.left_wrist
+    serial_config_key: PI05_CAMERA_LEFT_WRIST_SERIAL
+    usb_port_config_key: PI05_CAMERA_LEFT_WRIST_RGB_USB_PORT
+    pixel_format: MJPG
+  right_wrist:
+    observation_key: observation.images.right_wrist
+    serial_config_key: PI05_CAMERA_RIGHT_WRIST_SERIAL
+    usb_port_config_key: PI05_CAMERA_RIGHT_WRIST_RGB_USB_PORT
+    pixel_format: MJPG
+  top:
+    observation_key: observation.images.top
+    serial_config_key: PI05_CAMERA_TOP_SERIAL
+    usb_port_config_key: PI05_CAMERA_TOP_USB_PORT
+    pixel_format: YUYV
+
+arms:
+  left:
+    feedback_topic: /joint_states_single_l
+    action_topic: /left_arm/joint_ctrl_raw
+    localization_topic: /pi05/pika_input/left/localization_status
+    pika_pose_topic: /pi05/pika_input/left/pose
+    status_topic: /left_arm/arm_status
+    feature_names:
+      - left_joint1
+      - left_joint2
+      - left_joint3
+      - left_joint4
+      - left_joint5
+      - left_joint6
+      - left_gripper
+  right:
+    feedback_topic: /joint_states_single_r
+    action_topic: /right_arm/joint_ctrl_raw
+    localization_topic: /pi05/pika_input/right/localization_status
+    pika_pose_topic: /pi05/pika_input/right/pose
+    status_topic: /right_arm/arm_status
+    feature_names:
+      - right_joint1
+      - right_joint2
+      - right_joint3
+      - right_joint4
+      - right_joint5
+      - right_joint6
+      - right_gripper
+
+# observation.state and action both use this exact order. Indices are zero-based.
+vector_order:
+  - left_joint1
+  - left_joint2
+  - left_joint3
+  - left_joint4
+  - left_joint5
+  - left_joint6
+  - left_gripper
+  - right_joint1
+  - right_joint2
+  - right_joint3
+  - right_joint4
+  - right_joint5
+  - right_joint6
+  - right_gripper

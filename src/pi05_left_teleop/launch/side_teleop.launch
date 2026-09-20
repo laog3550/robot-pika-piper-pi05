@@ -6,10 +6,10 @@
   <arg name="command_topic" default="$(eval '/' + arg('side') + '_arm/joint_ctrl_raw')"/>
   <arg name="smooth_commands" default="false"/>
   <arg name="smoothing_time_constant" default="0.12"/>
-  <arg name="smoothing_max_velocity" default="0.30"/>
-  <arg name="smoothing_max_acceleration" default="0.50"/>
+  <arg name="smoothing_max_velocity" default="0.45"/>
+  <arg name="smoothing_max_acceleration" default="0.75"/>
   <arg name="smoothing_deadband" default="0.0005"/>
-  <arg name="smoothing_driver_speed_percent" default="20"/>
+  <arg name="smoothing_driver_speed_percent" default="30"/>
   <arg name="enable_gripper_teleop" default="false"/>
   <arg name="pika_gripper_device" default="/dev/null"/>
   <arg name="pika_gripper_topic" default="$(eval '/pi05/pika_input/' + arg('side') + '/gripper')"/>

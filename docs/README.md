@@ -8,7 +8,8 @@
 ## 当前有效文档
 
 - 运行与操作：[直接遥操作](direct-teleop.md)、[机械臂命令速查](arm-commands.md)、
-  [双臂架构](architecture.md)、[ROS 接口矩阵](ros-interface-matrix.md)
+  [双臂架构](architecture.md)、[ROS 接口矩阵](ros-interface-matrix.md)、
+  [双臂连续数据采集](data-collection.md)
 - 环境与设备：[环境安装与检查](environment-setup.md)、[设备配置](device-configuration.md)、
   [软件环境清单](software-environment.md)、[硬件清单](hardware-inventory.md)、
   [相机角色映射](camera-mapping.md)

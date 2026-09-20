@@ -129,7 +129,12 @@ def main():
     publisher = rospy.Publisher("gripper_target", Float64, queue_size=1)
     parser = FrameParser()
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RuntimeError(
+                "Pika device is already locked by another gripper-input session: %s" %
+                device) from error
         original = termios.tcgetattr(fd)
         configure_serial(fd)
         while not rospy.is_shutdown():

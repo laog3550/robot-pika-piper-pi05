@@ -21,7 +21,7 @@ session_spec.loader.exec_module(session)
 class ArmHomeTest(unittest.TestCase):
     def test_both_arms_use_confirmed_support_pose(self):
         expected = (["joint%d" % i for i in range(1, 7)],
-                    [0.0, 0.0, 0.0, 0.0, 0.567, 0.0], 5)
+                    [0.0, 0.0, 0.0, 0.0, 0.567, 0.0], 8)
         for side in ("left", "right"):
             self.assertEqual(
                 module.load_home(ROOT / "config/arm-home.yaml", side), expected)

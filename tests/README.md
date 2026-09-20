@@ -65,6 +65,9 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
   `roslaunch`，但不需要 master。
 - `test_direct_teleop.sh`：另外用 `roslaunch` 解析左右单臂入口在平滑、直连和夹爪模式下
   的节点名、分侧 remap 与 100 mm 参数传递，需要 `roslaunch`，不需要 master。
+- `test_data_collection.sh`：连续采集状态机、回位段仍处于 recording、双臂 14 维字段
+  顺序、三路视频/原始 episode 原子提交、LeRobot 特征契约，以及启动脚本的双臂平滑和
+  夹爪参数；使用合成图像和临时目录，不连接硬件。
 
 ## 纯离线 Python 测试
 
@@ -77,7 +80,7 @@ master，也不接触硬件。少数需要 `roslaunch` 或独立 master 的用�
   `test_gripper_teleop.py`、`test_safe_gripper_driver.py` 共 41 项。
 - `test_piper_feedback_decoding.py`：在 `.venv` 中运行，离线交叉核对固定 SDK 的正负
   int32 反馈解码与六轴目标编码，不建立 CAN 连接。
-- `test_arm_home.py`：校验左右臂使用同一组已确认支撑初始姿态及 5% 返回速度；不连接 ROS 或硬件。
+- `test_arm_home.py`：校验左右臂使用同一组已确认支撑初始姿态及 8% 返回速度；不连接 ROS 或硬件。
 - `test_joint_command_smoother.py`：离线验证关节目标平滑器的速度、加速度、死区和异常输入。
 - `test_gripper_teleop.py`：验证 Pika 编码器解析、夹爪量程映射和只读串口约束。
 - `test_safe_gripper_driver.py`：验证夹爪模式使能时保持当前开度、J1–J6 位置模式和

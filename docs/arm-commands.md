@@ -133,7 +133,7 @@ rostopic pub -1 /left_arm/joint_ctrl_raw sensor_msgs/JointState \
 ```
 
 右臂只需把话题改为 `/right_arm/joint_ctrl_raw`。
-`speed_percent: 5` 是当前返回速度设置；截图确认的是六关节坐标。
+`speed_percent: 8` 是当前返回速度设置（Piper 仅接受整数百分比，最接近原 5% 的 1.5 倍）；截图确认的是六关节坐标。
 
 ## 完整平滑摇操并在结束后自动返回
 
